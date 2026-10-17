@@ -14,11 +14,24 @@ import time
 import requests
 from pathlib import Path
 
+import pytest
+
 BACKEND_URL = "http://127.0.0.1:5000"
 FRONTEND_URL = "http://127.0.0.1:5173"
 
 
+def is_backend_running():
+    try:
+        r = requests.get(f"{BACKEND_URL}/health", timeout=1)
+        return r.status_code == 200
+    except Exception:
+        return False
+
+
+@pytest.mark.e2e
 def test_e2e_live():
+    if not is_backend_running():
+        pytest.skip("Backend server not running on port 5000; skipping live E2E test. Run with run_backend.bat to test.")
     print(f"\n1. Testing Backend Health ({BACKEND_URL}/health)...")
     res_health = requests.get(f"{BACKEND_URL}/health", timeout=5)
     assert res_health.status_code == 200

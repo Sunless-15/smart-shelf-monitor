@@ -11,10 +11,11 @@ We are building the "Intelligent Empty Shelf and Low Stock Monitoring System" - 
 5. Continue from "Current task". Do not redo work marked DONE unless it is broken.
 
 ## Current task
-Phase 6: Final documentation, dataset configuration (dataset.yaml, train.py), helper scripts, and cleanup.
+All phases (1 through 6) completed, tested, and verified end-to-end!
 
 ## Next steps (in order)
-- [ ] Phase 6: README, dataset configuration (dataset/dataset.yaml, train.py), model drop-in instructions, and final cleanup
+- Project complete. Run `.\scripts\run_all.bat` to launch both servers.
+- Optional: Collect custom dataset images, run `python train.py`, and update `backend/.env` with `MODEL_PATH=models/best.pt`.
 
 ## Phase checklist
 - [x] Phase 1: Backend skeleton, config, DB layer, video source layer (DONE)
@@ -22,9 +23,10 @@ Phase 6: Final documentation, dataset configuration (dataset.yaml, train.py), he
 - [x] Phase 3: All API endpoints including video upload jobs (DONE)
 - [x] Phase 4: React dashboard (6 pages), responsive and PWA basics (DONE)
 - [x] Phase 5: End-to-end integration testing (DONE)
-- [ ] Phase 6: README, scripts, cleanup
+- [x] Phase 6: README, dataset configuration, training helper, and final cleanup (DONE)
 
 ## Completed work log
+- 2026-10-17 13:01: Completed Phase 6: Authored comprehensive project README.md (team table, ASCII architecture diagram, quickstart, mobile WiFi setup, ESP32-CAM instructions, API table, testing commands, folder structure), created dataset/dataset.yaml and dataset/LABELING_GUIDE.md, built automated YOLOv8 transfer learning script train.py with automatic best.pt model deployment, registered pytest e2e markers, verified 26/26 unit tests and frontend production build pass cleanly. (Files: README.md, dataset/dataset.yaml, dataset/LABELING_GUIDE.md, train.py, pytest.ini, PROGRESS.md)
 - 2026-10-17 12:53: Completed Phase 5: Executed live end-to-end integration tests (backend port 5000 and frontend port 5173 running simultaneously), verified real-time YOLO inference, JPEG snapshots, asynchronous video upload and FFmpeg H.264 transcoding job, and verified responsive web delivery. (Files: backend/tests/test_e2e_live.py, PROGRESS.md)
 - 2026-10-17 12:46: Completed Phase 4: Initialized React Vite app, built custom responsive design system (dark/light themes, mobile-first bottom nav, desktop sidebar), implemented all 6 pages (Live Dashboard, Alerts Center, Analytics with Recharts, Video Upload Studio, Zones & Settings Editor, Demo Mode Toggle), set up PWA manifest and service worker, added Windows batch scripts (run_frontend.bat, run_all.bat, setup.bat), and confirmed zero-error production build. (Files: dashboard/, scripts/)
 - 2026-10-17 12:35: Completed Phase 3: Implemented all API endpoints (/alerts, /alerts/<id>/ack, /zones CRUD, /history, /metrics, /upload-video, /job-status, /job-result, /outputs/<file>), built background video processing worker with FFmpeg H.264 transcoding and timeline generation, and verified 26/26 unit tests pass. (Files: backend/video_jobs.py, backend/app.py, backend/db.py, backend/tests/test_phase3.py)
