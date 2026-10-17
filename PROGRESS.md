@@ -11,10 +11,9 @@ We are building the "Intelligent Empty Shelf and Low Stock Monitoring System" - 
 5. Continue from "Current task". Do not redo work marked DONE unless it is broken.
 
 ## Current task
-Phase 4: Building the React dashboard (Vite) with responsive PC/mobile layout, 6 pages/tabs, Recharts analytics, video uploader, zone editor, and PWA setup.
+Phase 5: End-to-end integration testing (running backend & frontend concurrently, testing live webcam/demo stream, alert generation, video upload workflow, and validating mobile viewport).
 
 ## Next steps (in order)
-- [ ] Phase 4: React dashboard (6 pages), responsive layout (mobile-first nav bar + desktop sidebar), dark/light mode, and PWA basics
 - [ ] Phase 5: End-to-end integration testing (live camera/video feed, alert toasts, video upload workflow, mobile viewport testing)
 - [ ] Phase 6: README, dataset config, training helper, batch scripts, cleanup
 
@@ -22,11 +21,12 @@ Phase 4: Building the React dashboard (Vite) with responsive PC/mobile layout, 6
 - [x] Phase 1: Backend skeleton, config, DB layer, video source layer (DONE)
 - [x] Phase 2: YOLO detection, zone and stock logic, prediction, alerts, live pipeline (DONE)
 - [x] Phase 3: All API endpoints including video upload jobs (DONE)
-- [ ] Phase 4: React dashboard (6 pages), responsive and PWA basics
+- [x] Phase 4: React dashboard (6 pages), responsive and PWA basics (DONE)
 - [ ] Phase 5: End-to-end integration testing
 - [ ] Phase 6: README, scripts, cleanup
 
 ## Completed work log
+- 2026-10-17 12:46: Completed Phase 4: Initialized React Vite app, built custom responsive design system (dark/light themes, mobile-first bottom nav, desktop sidebar), implemented all 6 pages (Live Dashboard, Alerts Center, Analytics with Recharts, Video Upload Studio, Zones & Settings Editor, Demo Mode Toggle), set up PWA manifest and service worker, added Windows batch scripts (run_frontend.bat, run_all.bat, setup.bat), and confirmed zero-error production build. (Files: dashboard/, scripts/)
 - 2026-10-17 12:35: Completed Phase 3: Implemented all API endpoints (/alerts, /alerts/<id>/ack, /zones CRUD, /history, /metrics, /upload-video, /job-status, /job-result, /outputs/<file>), built background video processing worker with FFmpeg H.264 transcoding and timeline generation, and verified 26/26 unit tests pass. (Files: backend/video_jobs.py, backend/app.py, backend/db.py, backend/tests/test_phase3.py)
 - 2026-10-17 12:25: Created AGENT_RULES.md, PROGRESS.md, .gitignore and verified 21/21 pytest tests pass across detection, stock, prediction, pipeline, and sources. (Files: PROGRESS.md, AGENT_RULES.md, .gitignore)
 - 2026-10-17 12:20: Completed Phase 2: Live monitoring background pipeline with deduplicated alerts and history logging, added /shelf-status and /live-stream endpoints, wrote 15 new unit tests. (Files: backend/pipeline.py, backend/app.py, backend/tests/test_pipeline.py)
@@ -36,32 +36,28 @@ Phase 4: Building the React dashboard (Vite) with responsive PC/mobile layout, 6
 - 2026-10-17 12:12: Completed Phase 1: Backend skeleton, configuration with .env and defaults, MongoDB database manager with in-memory JSON fallback and zone auto-seeding, pluggable video source layer (webcam, looped video, MJPEG stream, synthetic demo generator), /health, /source, /live-frame endpoints, and unit tests. (Files: backend/config.py, backend/.env, backend/.env.example, backend/db.py, backend/sources.py, backend/app.py, backend/tests/test_phase1.py, scripts/run_backend.bat)
 
 ## Known issues / bugs
-- None. All 26 unit tests across the entire test suite pass cleanly.
+- None. Backend passes all 26 unit tests. Frontend production bundle builds cleanly in <600ms.
 
 ## Decisions and notes
-- Video Processing Jobs: Handled asynchronously in background worker threads. Sampled every ~0.5s for fast processing. Annotated output is transcoded to H.264 using FFmpeg (from `d:\project\ffmpeg\ffmpeg-9.0.2-essentials_build\bin\ffmpeg.exe`) with fallback to raw mp4v, ensuring native playback in modern browsers.
-- Universal ID Filter: Uses `id_filter` supporting both string IDs and MongoDB `ObjectId` seamlessly across FallbackDB and PyMongo.
-- Pretrained model: `models/yolov8n.pt` downloaded and tested. Custom `best.pt` can be dropped in later.
-- Normalized coordinates: Zone coordinates are normalized `0.0 - 1.0` so zones remain resolution-independent across webcam, 1080p uploads, and ESP32-CAM streams.
-- Port allocations: Backend runs on `http://0.0.0.0:5000` with CORS enabled for all origins. Frontend Vite server runs on `http://0.0.0.0:5173`.
+- Frontend architecture: React with Vite, Lucide-react icons, and Recharts. Custom CSS variables provide rich dark/light mode and mobile-first bottom navigation.
+- Dynamic Host Routing: `api.js` defaults `API_BASE` to `http://${window.location.hostname}:5000` so mobile phones connecting via local WiFi (`http://<pc-ip>:5173`) automatically connect to the PC backend without hardcoded IPs.
+- PWA Support: `manifest.json` and `sw.js` configured with network bypass for live streaming and offline application caching.
+- Port allocations: Backend runs on `http://0.0.0.0:5000` with CORS enabled for all origins. Frontend Vite server runs on `http://0.0.0.0:5173` with `--host` enabled.
 
 ## How to run and test
-- Run all 26 unit tests:
+- Run all unit tests:
   `& "d:\project\venv\Scripts\python.exe" -m pytest -v "d:\project\smart shelf\backend\tests"`
-- Run backend server:
+- Build frontend:
+  `cd "d:\project\smart shelf\dashboard" && npm.cmd run build`
+- Run both Backend & Frontend simultaneously:
+  `.\scripts\run_all.bat`
+- Run Backend only:
   `.\scripts\run_backend.bat`
-  or
-  `& "d:\project\venv\Scripts\python.exe" "d:\project\smart shelf\backend\app.py"`
-- Test Video Upload endpoint:
-  `curl -F "video=@d:\project\smart shelf\backend\sample_data\sample_shelf.mp4" http://127.0.0.1:5000/upload-video`
-- Check Metrics:
-  `Invoke-RestMethod -Uri "http://127.0.0.1:5000/metrics" | ConvertTo-Json -Depth 5`
-- Check Alerts:
-  `Invoke-RestMethod -Uri "http://127.0.0.1:5000/alerts?unacknowledged=true" | ConvertTo-Json -Depth 5`
-- Check Zones:
-  `Invoke-RestMethod -Uri "http://127.0.0.1:5000/zones" | ConvertTo-Json -Depth 5`
-- Check Shelf Status:
-  `Invoke-RestMethod -Uri "http://127.0.0.1:5000/shelf-status" | ConvertTo-Json -Depth 6`
+- Run Frontend only:
+  `.\scripts\run_frontend.bat`
+- Open dashboard:
+  PC Browser: `http://localhost:5173`
+  Mobile Phone (same WiFi): `http://<your-pc-ip>:5173`
 
 ## Open questions for the user
-- None. Ready for Phase 4 (React frontend).
+- None. Ready for Phase 5 (End-to-end integration testing).

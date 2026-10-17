@@ -1,0 +1,21 @@
+{
+  "name": "Smart Shelf Monitor",
+  "short_name": "ShelfMonitor",
+  "description": "Intelligent Empty Shelf and Low Stock Monitoring System with Real-Time CV Inference",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b0f19",
+  "theme_color": "#0b0f19",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

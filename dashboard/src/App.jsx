@@ -1,0 +1,224 @@
+import React, { useState, useEffect } from 'react';
+import Sidebar from './components/Sidebar';
+import BottomNav from './components/BottomNav';
+import Header from './components/Header';
+import LiveDashboard from './pages/LiveDashboard';
+import AlertsView from './pages/AlertsView';
+import AnalyticsView from './pages/AnalyticsView';
+import VideoUploadView from './pages/VideoUploadView';
+import ZonesSettingsView from './pages/ZonesSettingsView';
+
+import { 
+  getAlerts, 
+  getHealth, 
+  getSource, 
+  switchSource 
+} from './services/api';
+import { AlertCircle, AlertTriangle, X } from 'lucide-react';
+
+export default function App() {
+  const [currentTab, setCurrentTab] = useState('dashboard');
+  const [unreadAlertsCount, setUnreadAlertsCount] = useState(0);
+  const [isOnline, setIsOnline] = useState(true);
+  const [isDemoMode, setIsDemoMode] = useState(true);
+  const [theme, setTheme] = useState('dark');
+  const [toastAlert, setToastAlert] = useState(null);
+  const [lastSeenAlertId, setLastSeenAlertId] = useState(null);
+
+  // Apply theme to document element
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
+
+  // Request browser notification permissions
+  useEffect(() => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+  }, []);
+
+  // Poll system health and unacknowledged alerts count
+  useEffect(() => {
+    const checkStatus = async () => {
+      try {
+        const [health, alertsData, srcData] = await Promise.all([
+          getHealth(),
+          getAlerts(true, 5),
+          getSource()
+        ]);
+
+        setIsOnline(true);
+        const unackAlerts = alertsData.alerts || [];
+        setUnreadAlertsCount(unackAlerts.length);
+
+        // Check if demo mode is active
+        if (srcData && srcData.type === 'video' && srcData.value?.includes('sample_shelf')) {
+          setIsDemoMode(true);
+        } else {
+          setIsDemoMode(false);
+        }
+
+        // Show toast notification for new alert
+        if (unackAlerts.length > 0) {
+          const newest = unackAlerts[0];
+          const nid = newest.id || newest._id;
+          if (nid && nid !== lastSeenAlertId) {
+            setLastSeenAlertId(nid);
+            setToastAlert(newest);
+
+            // Native browser notification if granted
+            if ('Notification' in window && Notification.permission === 'granted') {
+              new Notification(`Alert: ${newest.zone_name}`, {
+                body: newest.message,
+                icon: '/vite.svg'
+              });
+            }
+          }
+        }
+      } catch (err) {
+        setIsOnline(false);
+      }
+    };
+
+    checkStatus();
+    const interval = setInterval(checkStatus, 3000);
+    return () => clearInterval(interval);
+  }, [lastSeenAlertId]);
+
+  const handleToggleDemoMode = async () => {
+    try {
+      const targetMode = !isDemoMode;
+      if (targetMode) {
+        await switchSource('video', 'sample_data/sample_shelf.mp4');
+      } else {
+        await switchSource('webcam', 0);
+      }
+      setIsDemoMode(targetMode);
+    } catch (err) {
+      console.error('Failed to toggle demo mode:', err);
+    }
+  };
+
+  const handleToggleTheme = () => {
+    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
+  };
+
+  const getPageInfo = () => {
+    switch (currentTab) {
+      case 'dashboard':
+        return { title: 'Live Shelf Dashboard', subtitle: 'Real-time retail shelf vision feed and inventory analytics' };
+      case 'alerts':
+        return { title: 'Stock & Misplaced Alerts', subtitle: 'Live inventory anomalies requiring store manager intervention' };
+      case 'analytics':
+        return { title: 'Predictive Analytics', subtitle: 'Historical depletion trends, shortage forecasts, and system telemetry' };
+      case 'upload':
+        return { title: 'Video Analysis Studio', subtitle: 'Upload recorded store videos for automated YOLO annotation and timeline logging' };
+      case 'settings':
+        return { title: 'Zones & Video Sources', subtitle: 'Configure shelf detection boundaries and switch camera/ESP32-CAM stream inputs' };
+      default:
+        return { title: 'Smart Shelf Monitor', subtitle: '' };
+    }
+  };
+
+  const pageInfo = getPageInfo();
+
+  return (
+    <div className="app-container">
+      {/* Desktop Navigation Sidebar */}
+      <Sidebar
+        currentTab={currentTab}
+        setCurrentTab={setCurrentTab}
+        unreadAlertsCount={unreadAlertsCount}
+        isOnline={isOnline}
+        isDemoMode={isDemoMode}
+        onToggleDemoMode={handleToggleDemoMode}
+        theme={theme}
+        onToggleTheme={handleToggleTheme}
+      />
+
+      {/* Main App Content Viewport */}
+      <main className="main-content">
+        <Header
+          title={pageInfo.title}
+          subtitle={pageInfo.subtitle}
+          isOnline={isOnline}
+          isDemoMode={isDemoMode}
+          onToggleDemoMode={handleToggleDemoMode}
+          theme={theme}
+          onToggleTheme={handleToggleTheme}
+        />
+
+        {/* Tab Switching Body */}
+        {currentTab === 'dashboard' && <LiveDashboard isOnline={isOnline} />}
+        {currentTab === 'alerts' && <AlertsView />}
+        {currentTab === 'analytics' && <AnalyticsView />}
+        {currentTab === 'upload' && <VideoUploadView />}
+        {currentTab === 'settings' && <ZonesSettingsView />}
+      </main>
+
+      {/* Mobile Touch Bottom Nav */}
+      <BottomNav
+        currentTab={currentTab}
+        setCurrentTab={setCurrentTab}
+        unreadAlertsCount={unreadAlertsCount}
+      />
+
+      {/* Live Toast Alert Banner */}
+      {toastAlert && (
+        <div style={{
+          position: 'fixed',
+          top: '1.25rem',
+          right: '1.25rem',
+          background: 'rgba(17, 24, 39, 0.95)',
+          backdropFilter: 'blur(12px)',
+          border: '1px solid rgba(239, 68, 68, 0.4)',
+          boxShadow: '0 8px 30px rgba(0, 0, 0, 0.6)',
+          borderRadius: 'var(--radius-md)',
+          padding: '0.85rem 1.1rem',
+          zIndex: 9999,
+          maxWidth: '380px',
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: '0.75rem',
+          animation: 'slideIn 0.3s ease-out'
+        }}>
+          <AlertCircle size={20} color="var(--status-empty)" style={{ flexShrink: 0, marginTop: '2px' }} />
+          <div style={{ flex: 1 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <strong style={{ fontSize: '0.88rem', color: '#fff' }}>
+                {toastAlert.zone_name} Alert
+              </strong>
+              <button
+                onClick={() => setToastAlert(null)}
+                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '2px' }}
+              >
+                <X size={15} />
+              </button>
+            </div>
+            <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
+              {toastAlert.message}
+            </p>
+            <button
+              onClick={() => {
+                setCurrentTab('alerts');
+                setToastAlert(null);
+              }}
+              style={{
+                marginTop: '0.4rem',
+                background: 'none',
+                border: 'none',
+                color: 'var(--accent-blue)',
+                fontSize: '0.78rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                padding: 0
+              }}
+            >
+              View in Alerts Center &rarr;
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
