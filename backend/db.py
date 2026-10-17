@@ -23,13 +23,25 @@ def serialize_doc(doc: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
         return None
     d = dict(doc)
     if "_id" in d:
-        d["id"] = str(d["_id"])
-        d["_id"] = str(d["_id"])
+        str_id = str(d["_id"])
+        d["_id"] = str_id
+        if "id" not in d or not d["id"]:
+            d["id"] = str_id
+        # Also ensure string id
+        d["id"] = str(d["id"])
     return d
 
 def serialize_docs(docs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """Serialize a list of database documents."""
     return [serialize_doc(d) for d in docs]
+
+def id_filter(id_val: Any) -> Dict[str, Any]:
+    """Create a query filter matching either string id, string _id, or ObjectId."""
+    str_val = str(id_val).strip()
+    conditions = [{"id": str_val}, {"_id": str_val}]
+    if ObjectId.is_valid(str_val):
+        conditions.append({"_id": ObjectId(str_val)})
+    return {"$or": conditions}
 
 
 class FallbackCollection:
@@ -46,6 +58,8 @@ class FallbackCollection:
     def _matches(self, doc: Dict[str, Any], filter_dict: Dict[str, Any]) -> bool:
         if not filter_dict:
             return True
+        if "$or" in filter_dict and isinstance(filter_dict["$or"], list):
+            return any(self._matches(doc, sub) for sub in filter_dict["$or"])
         for key, value in filter_dict.items():
             doc_val = doc.get(key)
             if key in ("_id", "id"):

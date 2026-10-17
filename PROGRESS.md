@@ -11,23 +11,23 @@ We are building the "Intelligent Empty Shelf and Low Stock Monitoring System" - 
 5. Continue from "Current task". Do not redo work marked DONE unless it is broken.
 
 ## Current task
-Phase 3: building the remaining API endpoints, starting with POST /upload-video and the background video-processing job.
+Phase 4: Building the React dashboard (Vite) with responsive PC/mobile layout, 6 pages/tabs, Recharts analytics, video uploader, zone editor, and PWA setup.
 
 ## Next steps (in order)
-- [ ] Phase 3: all API endpoints including video upload jobs (/upload-video, /job-status, /job-result, /outputs, /metrics, zones CRUD, alerts list/ack, history, source switching)
-- [ ] Phase 4: React dashboard (6 pages), responsive and PWA basics
-- [ ] Phase 5: End-to-end integration testing
-- [ ] Phase 6: README, scripts, cleanup
+- [ ] Phase 4: React dashboard (6 pages), responsive layout (mobile-first nav bar + desktop sidebar), dark/light mode, and PWA basics
+- [ ] Phase 5: End-to-end integration testing (live camera/video feed, alert toasts, video upload workflow, mobile viewport testing)
+- [ ] Phase 6: README, dataset config, training helper, batch scripts, cleanup
 
 ## Phase checklist
 - [x] Phase 1: Backend skeleton, config, DB layer, video source layer (DONE)
 - [x] Phase 2: YOLO detection, zone and stock logic, prediction, alerts, live pipeline (DONE)
-- [ ] Phase 3: All API endpoints including video upload jobs
+- [x] Phase 3: All API endpoints including video upload jobs (DONE)
 - [ ] Phase 4: React dashboard (6 pages), responsive and PWA basics
 - [ ] Phase 5: End-to-end integration testing
 - [ ] Phase 6: README, scripts, cleanup
 
 ## Completed work log
+- 2026-10-17 12:35: Completed Phase 3: Implemented all API endpoints (/alerts, /alerts/<id>/ack, /zones CRUD, /history, /metrics, /upload-video, /job-status, /job-result, /outputs/<file>), built background video processing worker with FFmpeg H.264 transcoding and timeline generation, and verified 26/26 unit tests pass. (Files: backend/video_jobs.py, backend/app.py, backend/db.py, backend/tests/test_phase3.py)
 - 2026-10-17 12:25: Created AGENT_RULES.md, PROGRESS.md, .gitignore and verified 21/21 pytest tests pass across detection, stock, prediction, pipeline, and sources. (Files: PROGRESS.md, AGENT_RULES.md, .gitignore)
 - 2026-10-17 12:20: Completed Phase 2: Live monitoring background pipeline with deduplicated alerts and history logging, added /shelf-status and /live-stream endpoints, wrote 15 new unit tests. (Files: backend/pipeline.py, backend/app.py, backend/tests/test_pipeline.py)
 - 2026-10-17 12:17: Completed Phase 2: Shortage prediction engine estimating depletion rates, minutes to low stock, and minutes to empty via linear regression. (Files: backend/inference/predict.py, backend/tests/test_predict.py)
@@ -36,30 +36,32 @@ Phase 3: building the remaining API endpoints, starting with POST /upload-video 
 - 2026-10-17 12:12: Completed Phase 1: Backend skeleton, configuration with .env and defaults, MongoDB database manager with in-memory JSON fallback and zone auto-seeding, pluggable video source layer (webcam, looped video, MJPEG stream, synthetic demo generator), /health, /source, /live-frame endpoints, and unit tests. (Files: backend/config.py, backend/.env, backend/.env.example, backend/db.py, backend/sources.py, backend/app.py, backend/tests/test_phase1.py, scripts/run_backend.bat)
 
 ## Known issues / bugs
-- None currently. All 21 unit tests are passing.
+- None. All 26 unit tests across the entire test suite pass cleanly.
 
 ## Decisions and notes
-- Project location: Main git repo is located at `d:\project\smart shelf`. A directory junction `d:\project\smart-shelf-monitor` <<===>> `d:\project\smart shelf` is created so both path styles work identically.
-- Virtual environment: Located at `d:\project\venv` (Python 3.14.7) containing Flask, Ultralytics, PyMongo, OpenCV, Torch.
-- FFmpeg: Local binary auto-detected at `d:\project\ffmpeg\ffmpeg-9.0.2-essentials_build\bin\ffmpeg.exe`.
-- MongoDB: Running on `mongodb://localhost:27017` with database `shelf_monitor`. In-memory JSON store acts as automatic fallback at `backend/data/fallback_store.json`.
+- Video Processing Jobs: Handled asynchronously in background worker threads. Sampled every ~0.5s for fast processing. Annotated output is transcoded to H.264 using FFmpeg (from `d:\project\ffmpeg\ffmpeg-9.0.2-essentials_build\bin\ffmpeg.exe`) with fallback to raw mp4v, ensuring native playback in modern browsers.
+- Universal ID Filter: Uses `id_filter` supporting both string IDs and MongoDB `ObjectId` seamlessly across FallbackDB and PyMongo.
 - Pretrained model: `models/yolov8n.pt` downloaded and tested. Custom `best.pt` can be dropped in later.
 - Normalized coordinates: Zone coordinates are normalized `0.0 - 1.0` so zones remain resolution-independent across webcam, 1080p uploads, and ESP32-CAM streams.
 - Port allocations: Backend runs on `http://0.0.0.0:5000` with CORS enabled for all origins. Frontend Vite server runs on `http://0.0.0.0:5173`.
 
 ## How to run and test
-- Run all unit tests:
+- Run all 26 unit tests:
   `& "d:\project\venv\Scripts\python.exe" -m pytest -v "d:\project\smart shelf\backend\tests"`
 - Run backend server:
   `.\scripts\run_backend.bat`
   or
   `& "d:\project\venv\Scripts\python.exe" "d:\project\smart shelf\backend\app.py"`
-- Test Health API:
-  `Invoke-RestMethod -Uri "http://127.0.0.1:5000/health" | ConvertTo-Json -Depth 5`
-- Test Shelf Status API:
+- Test Video Upload endpoint:
+  `curl -F "video=@d:\project\smart shelf\backend\sample_data\sample_shelf.mp4" http://127.0.0.1:5000/upload-video`
+- Check Metrics:
+  `Invoke-RestMethod -Uri "http://127.0.0.1:5000/metrics" | ConvertTo-Json -Depth 5`
+- Check Alerts:
+  `Invoke-RestMethod -Uri "http://127.0.0.1:5000/alerts?unacknowledged=true" | ConvertTo-Json -Depth 5`
+- Check Zones:
+  `Invoke-RestMethod -Uri "http://127.0.0.1:5000/zones" | ConvertTo-Json -Depth 5`
+- Check Shelf Status:
   `Invoke-RestMethod -Uri "http://127.0.0.1:5000/shelf-status" | ConvertTo-Json -Depth 6`
-- View live stream in browser:
-  Open `http://127.0.0.1:5000/live-stream` in any browser.
 
 ## Open questions for the user
-- None. Ready for Phase 3.
+- None. Ready for Phase 4 (React frontend).

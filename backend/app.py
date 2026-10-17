@@ -7,13 +7,16 @@ video source abstraction layer, and health verification endpoints.
 import logging
 import os
 import time
-from flask import Flask, Response, jsonify, request
+import uuid
+from flask import Flask, Response, jsonify, request, send_from_directory
 from flask_cors import CORS
+from werkzeug.utils import secure_filename
 
 from config import Config
-from db import db
+from db import db, id_filter, serialize_doc, serialize_docs
 from sources import source_manager
 from pipeline import pipeline
+from video_jobs import job_manager
 
 # Setup logging
 logging.basicConfig(
@@ -163,6 +166,279 @@ def live_stream():
         generate_mjpeg(),
         mimetype="multipart/x-mixed-replace; boundary=frame"
     )
+
+
+# -----------------------------------------------------------------------------
+# Alerts Endpoints
+# -----------------------------------------------------------------------------
+
+@app.route("/alerts", methods=["GET"])
+def get_alerts():
+    """List recorded alerts with optional unacknowledged filter."""
+    unack_only = request.args.get("unacknowledged", "").lower() in ("true", "1")
+    limit = min(200, int(request.args.get("limit", 50)))
+
+    filter_dict = {"acknowledged": False} if unack_only else {}
+    alerts = list(db.alerts.find(filter_dict, sort=[("timestamp", -1)], limit=limit))
+    return jsonify({
+        "count": len(alerts),
+        "alerts": serialize_docs(alerts)
+    }), 200
+
+
+@app.route("/alerts/<alert_id>/ack", methods=["POST"])
+def acknowledge_alert(alert_id):
+    """Mark an alert as acknowledged."""
+    res = db.alerts.update_one(
+        id_filter(alert_id),
+        {"$set": {"acknowledged": True, "acknowledged_at": time.time()}}
+    )
+
+    if res.matched_count == 0:
+        return jsonify({"success": False, "message": "Alert not found"}), 404
+
+    return jsonify({"success": True, "message": "Alert acknowledged successfully"}), 200
+
+
+# -----------------------------------------------------------------------------
+# Shelf Zone CRUD Endpoints
+# -----------------------------------------------------------------------------
+
+@app.route("/zones", methods=["GET"])
+def get_zones():
+    """Retrieve all defined shelf zones."""
+    zones = list(db.zones.find({}))
+    return jsonify(serialize_docs(zones)), 200
+
+
+@app.route("/zones", methods=["POST"])
+def create_zone():
+    """Create a new shelf zone definition.
+
+    Payload:
+    {
+        "name": "Snack Rack",
+        "expected_class": "bottle",
+        "full_count": 5,
+        "low_threshold": 0.35,
+        "coords": {"x1": 0.1, "y1": 0.1, "x2": 0.5, "y2": 0.5}
+    }
+    """
+    data = request.get_json(force=True, silent=True) or {}
+    name = data.get("name")
+    expected_class = data.get("expected_class")
+    if not name or not expected_class:
+        return jsonify({"error": "Missing required fields: 'name' and 'expected_class'"}), 400
+
+    coords = data.get("coords", {"x1": 0.1, "y1": 0.1, "x2": 0.9, "y2": 0.9})
+    zone_doc = {
+        "id": str(uuid.uuid4()),
+        "name": str(name).strip(),
+        "expected_class": str(expected_class).lower().strip(),
+        "full_count": max(1, int(data.get("full_count", 5))),
+        "low_threshold": float(data.get("low_threshold", 0.35)),
+        "coords": {
+            "x1": round(float(coords.get("x1", 0.0)), 4),
+            "y1": round(float(coords.get("y1", 0.0)), 4),
+            "x2": round(float(coords.get("x2", 1.0)), 4),
+            "y2": round(float(coords.get("y2", 1.0)), 4),
+        },
+        "created_at": time.time(),
+        "updated_at": time.time(),
+    }
+    insert_res = db.zones.insert_one(zone_doc)
+    zone_doc["_id"] = str(insert_res.inserted_id)
+
+    return jsonify(serialize_doc(zone_doc)), 201
+
+
+@app.route("/zones/<zone_id>", methods=["PUT"])
+def update_zone(zone_id):
+    """Update an existing shelf zone."""
+    data = request.get_json(force=True, silent=True) or {}
+    update_fields = {}
+
+    if "name" in data:
+        update_fields["name"] = str(data["name"]).strip()
+    if "expected_class" in data:
+        update_fields["expected_class"] = str(data["expected_class"]).lower().strip()
+    if "full_count" in data:
+        update_fields["full_count"] = max(1, int(data["full_count"]))
+    if "low_threshold" in data:
+        update_fields["low_threshold"] = float(data["low_threshold"])
+    if "coords" in data and isinstance(data["coords"], dict):
+        c = data["coords"]
+        update_fields["coords"] = {
+            "x1": round(float(c.get("x1", 0.0)), 4),
+            "y1": round(float(c.get("y1", 0.0)), 4),
+            "x2": round(float(c.get("x2", 1.0)), 4),
+            "y2": round(float(c.get("y2", 1.0)), 4),
+        }
+    update_fields["updated_at"] = time.time()
+
+    res = db.zones.update_one(id_filter(zone_id), {"$set": update_fields})
+    if res.matched_count == 0:
+        return jsonify({"error": "Zone not found"}), 404
+
+    updated = db.zones.find_one(id_filter(zone_id))
+    return jsonify(serialize_doc(updated)), 200
+
+
+@app.route("/zones/<zone_id>", methods=["DELETE"])
+def delete_zone(zone_id):
+    """Delete a shelf zone."""
+    res = db.zones.delete_one(id_filter(zone_id))
+    if res.deleted_count == 0:
+        return jsonify({"error": "Zone not found"}), 404
+
+    return jsonify({"success": True, "message": f"Zone {zone_id} deleted"}), 200
+
+
+# -----------------------------------------------------------------------------
+# Time-Series History Endpoint (for Charts)
+# -----------------------------------------------------------------------------
+
+@app.route("/history", methods=["GET"])
+def get_history():
+    """Return historical stock percentages and counts for Recharts."""
+    zone_id = request.args.get("zone")
+    hours = float(request.args.get("hours", 24))
+    since_ts = time.time() - (hours * 3600)
+
+    filter_dict: Dict[str, Any] = {"timestamp": {"$gte": since_ts}}
+    if zone_id:
+        filter_dict["zone_id"] = zone_id
+
+    history_records = list(
+        db.history.find(
+            filter_dict,
+            sort=[("timestamp", 1)],
+            limit=500
+        )
+    )
+    return jsonify({
+        "count": len(history_records),
+        "history": serialize_docs(history_records)
+    }), 200
+
+
+# -----------------------------------------------------------------------------
+# Video Upload & Background Processing Job Endpoints
+# -----------------------------------------------------------------------------
+
+ALLOWED_VIDEO_EXTENSIONS = {"mp4", "avi", "mov", "mkv"}
+
+def allowed_file(filename: str) -> bool:
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_VIDEO_EXTENSIONS
+
+
+@app.route("/upload-video", methods=["POST"])
+def upload_video():
+    """Upload a video file for asynchronous sampling, detection, and annotation."""
+    file = request.files.get("video") or request.files.get("file")
+    if not file or file.filename == "":
+        return jsonify({"error": "No video file provided"}), 400
+
+    if not allowed_file(file.filename):
+        return jsonify({
+            "error": f"Invalid video file format. Supported: {', '.join(ALLOWED_VIDEO_EXTENSIONS)}"
+        }), 400
+
+    filename = secure_filename(file.filename)
+    unique_prefix = uuid.uuid4().hex[:8]
+    save_filename = f"{unique_prefix}_{filename}"
+    save_path = Config.UPLOADS_DIR / save_filename
+    file.save(str(save_path))
+
+    # Register and trigger job
+    job_id = job_manager.create_job(filename=filename, filepath=str(save_path))
+    job_manager.start_job(job_id)
+
+    return jsonify({
+        "success": True,
+        "job_id": job_id,
+        "filename": filename,
+        "status": "queued",
+        "message": "Video uploaded successfully. Processing started in background."
+    }), 202
+
+
+@app.route("/job-status/<job_id>", methods=["GET"])
+def get_job_status(job_id):
+    """Check processing status and completion percentage of an uploaded video job."""
+    job = db.jobs.find_one(id_filter(job_id))
+    if not job:
+        return jsonify({"error": "Job not found"}), 404
+
+    return jsonify({
+        "job_id": job.get("job_id", job_id),
+        "filename": job.get("filename"),
+        "status": job.get("status"),
+        "progress": job.get("progress", 0),
+        "error": job.get("error"),
+        "created_at": job.get("created_at"),
+        "completed_at": job.get("completed_at"),
+    }), 200
+
+
+@app.route("/job-result/<job_id>", methods=["GET"])
+def get_job_result(job_id):
+    """Retrieve the summary metrics, event timeline, and annotated video URL for a completed job."""
+    job = db.jobs.find_one(id_filter(job_id))
+    if not job:
+        return jsonify({"error": "Job not found"}), 404
+
+    status = job.get("status")
+    if status != "done":
+        return jsonify({
+            "job_id": job_id,
+            "status": status,
+            "progress": job.get("progress", 0),
+            "message": f"Job is currently {status}. Check back once progress reaches 100%."
+        }), 200
+
+    return jsonify({
+        "job_id": job_id,
+        "status": "done",
+        "progress": 100,
+        "result": job.get("result", {})
+    }), 200
+
+
+@app.route("/outputs/<path:filename>", methods=["GET"])
+def get_output_file(filename):
+    """Serve annotated video files and reports."""
+    return send_from_directory(Config.OUTPUTS_DIR, filename)
+
+
+# -----------------------------------------------------------------------------
+# System Metrics Endpoint (Evaluation & Monitoring)
+# -----------------------------------------------------------------------------
+
+@app.route("/metrics", methods=["GET"])
+def get_metrics():
+    """Return performance and monitoring metrics."""
+    uptime = round(time.time() - START_TIME, 1)
+    status_data = pipeline.get_status()
+
+    total_alerts = db.alerts.count_documents({})
+    unack_alerts = db.alerts.count_documents({"acknowledged": False})
+
+    return jsonify({
+        "uptime_seconds": uptime,
+        "pipeline": {
+            "is_running": status_data.get("is_running", False),
+            "fps": status_data.get("fps", 0.0),
+            "avg_inference_latency_ms": status_data.get("latency_ms", 0.0),
+            "processed_frames": status_data.get("processed_frames", 0),
+        },
+        "alerts": {
+            "total_count": total_alerts,
+            "unacknowledged_count": unack_alerts,
+        },
+        "video_source": source_manager.get_status(),
+        "database": db.get_status(),
+    }), 200
 
 
 @app.errorhandler(404)
