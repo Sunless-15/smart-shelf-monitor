@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pytest_cache/
+.coverage
+htmlcov/
+*.log
+
+# Environments
+.env
+.venv/
+venv/
+ENV/
+
+# Dependencies
+node_modules/
+dist/
+
+# Large binaries & media
+backend/models/*.pt
+!backend/models/.gitkeep
+backend/uploads/*
+!backend/uploads/.gitkeep
+backend/outputs/*
+!backend/outputs/.gitkeep
+backend/sample_data/*.jpg
+
+# System & IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
