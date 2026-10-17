@@ -40,8 +40,13 @@ def test_e2e_live():
     print("   [OK] Database Mode:", health_data["database"]["type"])
     print("   [OK] Video Source:", health_data["video_source"]["type"])
 
+    # Obtain auth token for protected endpoints
+    res_login = requests.post(f"{BACKEND_URL}/login", json={"password": "admin123"}, timeout=5)
+    token = res_login.json().get("token") if res_login.status_code == 200 else ""
+    auth_headers = {"Authorization": f"Bearer {token}"} if token else {}
+
     print(f"\n2. Testing Live Shelf Status ({BACKEND_URL}/shelf-status)...")
-    res_shelf = requests.get(f"{BACKEND_URL}/shelf-status", timeout=5)
+    res_shelf = requests.get(f"{BACKEND_URL}/shelf-status", headers=auth_headers, timeout=5)
     assert res_shelf.status_code == 200
     shelf_data = res_shelf.json()
     print("   [OK] Total Shelf Zones:", shelf_data["total_zones"])
@@ -49,7 +54,7 @@ def test_e2e_live():
     print("   [OK] Inference Latency:", shelf_data["latency_ms"], "ms")
 
     print(f"\n3. Testing Live Frame JPEG Snapshot ({BACKEND_URL}/live-frame)...")
-    res_frame = requests.get(f"{BACKEND_URL}/live-frame", timeout=5)
+    res_frame = requests.get(f"{BACKEND_URL}/live-frame", headers=auth_headers, timeout=5)
     assert res_frame.status_code == 200
     assert res_frame.headers.get("Content-Type") == "image/jpeg"
     print("   [OK] Received JPEG Frame:", len(res_frame.content), "bytes")
@@ -62,6 +67,7 @@ def test_e2e_live():
         res_upload = requests.post(
             f"{BACKEND_URL}/upload-video",
             files={"video": ("sample_shelf.mp4", f, "video/mp4")},
+            headers=auth_headers,
             timeout=10
         )
     assert res_upload.status_code == 202
@@ -74,7 +80,7 @@ def test_e2e_live():
     start_t = time.time()
     job_done = False
     while time.time() - start_t < max_wait:
-        res_job = requests.get(f"{BACKEND_URL}/job-status/{job_id}", timeout=5)
+        res_job = requests.get(f"{BACKEND_URL}/job-status/{job_id}", headers=auth_headers, timeout=5)
         status_data = res_job.json()
         print(f"   ... Job Progress: {status_data['progress']}% (Status: {status_data['status']})")
         if status_data["status"] == "done":
@@ -87,7 +93,7 @@ def test_e2e_live():
     assert job_done, "Job did not complete within timeout"
 
     # Verify result
-    res_result = requests.get(f"{BACKEND_URL}/job-result/{job_id}", timeout=5)
+    res_result = requests.get(f"{BACKEND_URL}/job-result/{job_id}", headers=auth_headers, timeout=5)
     assert res_result.status_code == 200
     result_data = res_result.json()["result"]
     print("   [OK] Video Job Completed Successfully!")
@@ -96,7 +102,8 @@ def test_e2e_live():
     print("   [OK] Output Video URL:", result_data["output_video_url"])
 
     print(f"\n5. Testing Output Video Download ({BACKEND_URL}{result_data['output_video_url']})...")
-    res_video = requests.get(f"{BACKEND_URL}{result_data['output_video_url']}", timeout=10)
+    video_url = f"{BACKEND_URL}{result_data['output_video_url']}?token={token}" if token else f"{BACKEND_URL}{result_data['output_video_url']}"
+    res_video = requests.get(video_url, timeout=10)
     assert res_video.status_code == 200
     print("   [OK] Output Video File Accessible:", len(res_video.content), "bytes")
 

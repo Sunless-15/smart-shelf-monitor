@@ -7,12 +7,11 @@ import axios from 'axios';
 const envUrl = (import.meta.env.VITE_API_URL || '').trim().replace(/\/$/, '');
 const isBrowser = typeof window !== 'undefined';
 const hostName = isBrowser ? window.location.hostname : '';
+const isVercel = isBrowser && hostName.includes('vercel.app');
 
 export const API_BASE = 
   envUrl || 
-  (isBrowser && hostName && hostName !== 'localhost' && !hostName.includes('127.0.0.1') && !hostName.includes('vercel.app')
-    ? `http://${hostName}:5000`
-    : (isBrowser && hostName.includes('vercel.app') ? '' : 'http://localhost:5000'));
+  (isVercel ? '' : `${isBrowser ? window.location.protocol : 'http:'}//${hostName || 'localhost'}:5000`);
 
 // Token Management
 export const getAuthToken = () => {

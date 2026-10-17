@@ -30,8 +30,8 @@ logging.basicConfig(
 logger = logging.getLogger("smart_shelf_backend")
 
 app = Flask(__name__)
-# Enable CORS for configured origins (supporting Vercel production domains and local dev)
-CORS(app, resources={r"/*": {"origins": Config.CORS_ORIGINS}}, supports_credentials=True)
+# Enable CORS for all origins in development (supports localhost, 127.0.0.1, LAN, and Vercel)
+CORS(app, resources={r"/*": {"origins": "*" if not Config.IS_CLOUD else Config.CORS_ORIGINS}})
 
 # Clean up old upload/output files on startup
 Config.cleanup_old_files()
