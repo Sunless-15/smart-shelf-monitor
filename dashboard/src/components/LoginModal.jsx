@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Lock, ShieldCheck, AlertCircle, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { Lock, AlertCircle, Eye, EyeOff, ShieldCheck } from 'lucide-react';
 import { login } from '../services/api';
 
 export default function LoginModal({ isOpen, onSuccess }) {
@@ -41,59 +41,71 @@ export default function LoginModal({ isOpen, onSuccess }) {
     <div style={{
       position: 'fixed',
       inset: 0,
-      background: 'rgba(5, 8, 16, 0.82)',
-      backdropFilter: 'blur(10px)',
+      background: 'rgba(5, 5, 5, 0.88)',
+      backdropFilter: 'blur(16px)',
+      WebkitBackdropFilter: 'blur(16px)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       zIndex: 99999,
-      padding: '1rem',
+      padding: '1.25rem',
       animation: 'fadeIn 0.25s ease-out'
     }}>
-      <div style={{
-        background: 'var(--surface-primary, #111827)',
-        border: '1px solid var(--border-color, #374151)',
-        borderRadius: '16px',
-        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.75)',
+      <div className="bento-card bento-card-dark" style={{
         width: '100%',
-        maxWidth: '420px',
-        padding: '2rem',
-        color: 'var(--text-primary, #f9fafb)',
-        textAlign: 'center'
+        maxWidth: '400px',
+        padding: '36px 30px',
+        textAlign: 'center',
+        border: '1px solid var(--border-subtle)'
       }}>
+        {/* Brand Header */}
+        <div style={{ marginBottom: '22px' }}>
+          <div style={{
+            fontSize: '1.6rem',
+            fontWeight: 800,
+            letterSpacing: '-0.04em',
+            color: '#FFFFFF'
+          }}>
+            shelf<span style={{ color: 'var(--accent-lime)' }}>sense</span>
+          </div>
+          <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
+            Store Manager Terminal & AI Monitoring
+          </div>
+        </div>
+
         <div style={{
-          width: '56px',
-          height: '56px',
+          width: '54px',
+          height: '54px',
           borderRadius: '50%',
-          background: 'rgba(59, 130, 246, 0.15)',
-          border: '1px solid rgba(59, 130, 246, 0.3)',
+          background: 'rgba(228, 255, 26, 0.1)',
+          border: '1px solid rgba(228, 255, 26, 0.3)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          margin: '0 auto 1.25rem auto'
+          margin: '0 auto 18px auto'
         }}>
-          <Lock size={28} color="var(--accent-blue, #3b82f6)" />
+          <Lock size={22} color="var(--accent-lime)" />
         </div>
 
-        <h2 style={{ fontSize: '1.35rem', fontWeight: 700, marginBottom: '0.4rem' }}>
-          Dashboard Access
+        <h2 style={{ fontSize: '1.35rem', fontWeight: 800, letterSpacing: '-0.02em', marginBottom: '6px' }}>
+          Access Dashboard
         </h2>
-        <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary, #9ca3af)', marginBottom: '1.5rem' }}>
-          Enter administrator password to access live feeds, alerts, and settings.
+        <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', marginBottom: '24px' }}>
+          Enter administrator password to access live feeds, stock alerts, and zone camera settings.
         </p>
 
         {error && (
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '0.5rem',
-            background: 'rgba(239, 68, 68, 0.15)',
-            border: '1px solid rgba(239, 68, 68, 0.35)',
-            color: '#f87171',
-            borderRadius: '8px',
-            padding: '0.65rem 0.85rem',
+            gap: '8px',
+            background: 'rgba(255, 77, 79, 0.15)',
+            border: '1px solid rgba(255, 77, 79, 0.35)',
+            color: '#FF4D4F',
+            borderRadius: 'var(--radius-card-sm)',
+            padding: '10px 14px',
             fontSize: '0.82rem',
-            marginBottom: '1.25rem',
+            marginBottom: '18px',
             textAlign: 'left'
           }}>
             <AlertCircle size={16} style={{ flexShrink: 0 }} />
@@ -102,7 +114,7 @@ export default function LoginModal({ isOpen, onSuccess }) {
         )}
 
         <form onSubmit={handleSubmit}>
-          <div style={{ position: 'relative', marginBottom: '1.25rem' }}>
+          <div style={{ position: 'relative', marginBottom: '20px' }}>
             <input
               type={showPassword ? 'text' : 'password'}
               value={password}
@@ -111,12 +123,12 @@ export default function LoginModal({ isOpen, onSuccess }) {
               autoFocus
               style={{
                 width: '100%',
-                padding: '0.8rem 2.8rem 0.8rem 1rem',
-                background: 'var(--surface-secondary, #1f2937)',
-                border: '1px solid var(--border-color, #4b5563)',
-                borderRadius: '10px',
-                color: '#fff',
-                fontSize: '0.95rem',
+                padding: '12px 42px 12px 18px',
+                background: '#101010',
+                border: '1px solid var(--border-subtle)',
+                borderRadius: 'var(--radius-pill)',
+                color: '#FFFFFF',
+                fontSize: '0.92rem',
                 outline: 'none',
                 boxSizing: 'border-box'
               }}
@@ -126,53 +138,47 @@ export default function LoginModal({ isOpen, onSuccess }) {
               onClick={() => setShowPassword(!showPassword)}
               style={{
                 position: 'absolute',
-                right: '0.8rem',
+                right: '14px',
                 top: '50%',
                 transform: 'translateY(-50%)',
                 background: 'none',
                 border: 'none',
-                color: 'var(--text-muted, #9ca3af)',
+                color: 'var(--text-muted)',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center'
               }}
             >
-              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
             </button>
           </div>
 
           <button
             type="submit"
             disabled={loading}
+            className="btn-pill btn-pill-lime"
             style={{
               width: '100%',
-              padding: '0.85rem',
-              background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
-              border: 'none',
-              borderRadius: '10px',
-              color: '#fff',
-              fontSize: '0.95rem',
-              fontWeight: 600,
-              cursor: loading ? 'not-allowed' : 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '0.5rem',
-              transition: 'all 0.2s ease',
-              opacity: loading ? 0.7 : 1
+              padding: '13px',
+              fontSize: '0.95rem'
             }}
           >
-            {loading ? 'Authenticating...' : (
-              <>
-                Unlock Dashboard <ArrowRight size={18} />
-              </>
-            )}
+            {loading ? 'Authenticating...' : 'Unlock Terminal'}
           </button>
         </form>
 
-        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted, #6b7280)', marginTop: '1.25rem' }}>
-          Default credential: <code style={{ color: 'var(--accent-blue, #60a5fa)' }}>admin123</code> (configured via DASHBOARD_PASSWORD)
-        </p>
+        <div style={{
+          marginTop: '18px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '6px',
+          fontSize: '0.75rem',
+          color: 'var(--text-muted)'
+        }}>
+          <ShieldCheck size={14} color="var(--accent-lime)" />
+          <span>Protected with YOLOv8 Vision & Session JWT</span>
+        </div>
       </div>
     </div>
   );

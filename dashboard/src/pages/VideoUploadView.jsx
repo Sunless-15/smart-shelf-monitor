@@ -6,10 +6,9 @@ import {
   CheckCircle2, 
   AlertCircle, 
   Play, 
-  Clock, 
-  Layers, 
-  Activity, 
-  RefreshCw 
+  RefreshCw,
+  ArrowUpRight,
+  Download
 } from 'lucide-react';
 
 export default function VideoUploadView() {
@@ -17,7 +16,7 @@ export default function VideoUploadView() {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [jobId, setJobId] = useState(null);
-  const [jobStatus, setJobStatus] = useState(null); // queued | processing | done | failed
+  const [jobStatus, setJobStatus] = useState(null);
   const [jobProgress, setJobProgress] = useState(0);
   const [jobResult, setJobResult] = useState(null);
   const [error, setError] = useState(null);
@@ -74,7 +73,6 @@ export default function VideoUploadView() {
 
         if (statusRes.status === 'done') {
           clearInterval(pollInterval);
-          // Fetch final result
           const resultRes = await getJobResult(id);
           setJobResult(resultRes.result);
         } else if (statusRes.status === 'failed') {
@@ -95,31 +93,30 @@ export default function VideoUploadView() {
   };
 
   return (
-    <div>
-      {/* Upload Header */}
-      <div className="glass-card" style={{ marginBottom: '1.5rem' }}>
-        <h2 style={{ fontSize: '1.35rem', fontWeight: 700, marginBottom: '0.35rem' }}>
-          Asynchronous Video Analysis & Annotation
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      {/* Upload Header Bento Card */}
+      <div className="bento-card bento-card-dark" style={{ padding: '24px 28px' }}>
+        <h2 style={{ fontSize: '1.35rem', fontWeight: 800, letterSpacing: '-0.02em', color: '#FFFFFF', marginBottom: '6px' }}>
+          Asynchronous Video Analysis & Annotation Studio
         </h2>
-        <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)' }}>
-          Upload recorded retail shelf footage (.mp4, .avi, .mov). The background worker samples frames, runs YOLO detection, evaluates shelf occupancy, and outputs an annotated video with an anomaly timeline.
+        <p style={{ fontSize: '0.86rem', color: 'var(--text-secondary)' }}>
+          Upload recorded retail shelf footage (.mp4, .avi, .mov). The background worker runs YOLO object detection, evaluates shelf occupancy, and outputs an annotated video with an interactive anomaly timeline.
         </p>
       </div>
 
-      {/* File Dropzone */}
+      {/* File Dropzone Bento Card */}
       <div 
         onDragOver={(e) => e.preventDefault()}
         onDrop={handleFileDrop}
         onClick={() => fileInputRef.current?.click()}
-        className="glass-card"
+        className="bento-card bento-card-dark"
         style={{
           border: '2px dashed var(--border-subtle)',
-          borderRadius: 'var(--radius-lg)',
-          padding: '3rem 1.5rem',
+          padding: '48px 24px',
           textAlign: 'center',
           cursor: 'pointer',
-          marginBottom: '1.5rem',
-          background: file ? 'rgba(59, 130, 246, 0.05)' : 'var(--bg-card)'
+          background: file ? 'rgba(228, 255, 26, 0.04)' : 'var(--card-dark-bg)',
+          transition: 'all 0.2s ease'
         }}
       >
         <input 
@@ -131,104 +128,116 @@ export default function VideoUploadView() {
         />
 
         <div style={{
-          width: '56px',
-          height: '56px',
+          width: '60px',
+          height: '60px',
           borderRadius: '50%',
-          background: 'rgba(59, 130, 246, 0.15)',
-          color: 'var(--accent-blue)',
+          background: 'var(--accent-lime-muted)',
+          color: 'var(--accent-lime)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          margin: '0 auto 1rem'
+          margin: '0 auto 16px'
         }}>
           {file ? <FileVideo size={28} /> : <UploadCloud size={28} />}
         </div>
 
         {file ? (
           <div>
-            <h4 style={{ fontSize: '1.1rem', fontWeight: 700 }}>{file.name}</h4>
-            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-              {(file.size / (1024 * 1024)).toFixed(2)} MB — Click to choose a different file
+            <h4 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#FFFFFF' }}>{file.name}</h4>
+            <span style={{ fontSize: '0.84rem', color: 'var(--accent-lime)' }}>
+              {(file.size / (1024 * 1024)).toFixed(2)} MB — Ready to analyze
             </span>
           </div>
         ) : (
           <div>
-            <h4 style={{ fontSize: '1.1rem', fontWeight: 700 }}>Tap or Drop video here to upload</h4>
-            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-              Supported formats: MP4, AVI, MOV (up to 500MB)
+            <h4 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#FFFFFF' }}>Drag & drop shelf video here</h4>
+            <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+              Supported: MP4, AVI, MOV up to 500MB
             </span>
           </div>
         )}
       </div>
 
       {/* Action Button & Error */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
         <button
           onClick={startUpload}
           disabled={!file || uploading || jobStatus === 'processing'}
-          className="btn btn-primary"
-          style={{ minHeight: '44px', padding: '0.6rem 1.5rem', fontSize: '0.95rem' }}
+          className="btn-pill btn-pill-lime"
+          style={{ padding: '12px 28px', fontSize: '0.92rem' }}
         >
           <UploadCloud size={18} />
-          <span>{uploading ? 'Uploading...' : (jobStatus === 'processing' ? 'Processing...' : 'Start Video Analysis')}</span>
+          <span>{uploading ? 'Uploading...' : (jobStatus === 'processing' ? 'Processing Inference...' : 'Start Video Analysis')}</span>
         </button>
 
         {error && (
-          <div style={{ color: 'var(--status-empty)', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.88rem' }}>
+          <div style={{ color: 'var(--status-empty)', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.88rem' }}>
             <AlertCircle size={16} />
             <span>{error}</span>
           </div>
         )}
       </div>
 
-      {/* Progress Card (during upload or processing) */}
+      {/* Progress Card */}
       {(uploading || (jobStatus && jobStatus !== 'done')) && (
-        <div className="glass-card" style={{ marginBottom: '1.5rem', padding: '1.5rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.65rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-              <RefreshCw size={18} color="var(--accent-cyan)" className="animate-spin" />
-              <strong style={{ fontSize: '0.95rem' }}>
+        <div className="bento-card bento-card-dark" style={{ padding: '24px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <RefreshCw size={18} color="var(--accent-lime)" className="animate-spin" />
+              <strong style={{ fontSize: '0.94rem', color: '#FFFFFF' }}>
                 {uploading 
                   ? `Uploading Video: ${uploadProgress}%` 
-                  : `Analyzing Frames & Transcoding: ${jobProgress}%`}
+                  : `Running YOLO Detection & Encoding: ${jobProgress}%`}
               </strong>
             </div>
-            <span className="badge badge-low">{jobStatus?.toUpperCase()}</span>
+            <span style={{
+              background: 'var(--accent-lime)',
+              color: '#000000',
+              padding: '4px 12px',
+              borderRadius: 'var(--radius-pill)',
+              fontWeight: 800,
+              fontSize: '0.72rem'
+            }}>
+              {jobStatus?.toUpperCase()}
+            </span>
           </div>
 
-          <div className="progress-container" style={{ height: '12px' }}>
+          <div style={{ width: '100%', height: '8px', background: '#222', borderRadius: 'var(--radius-pill)', overflow: 'hidden' }}>
             <div 
-              className="progress-fill fill-low" 
-              style={{ width: `${uploading ? uploadProgress : jobProgress}%` }} 
+              style={{ 
+                width: `${uploading ? uploadProgress : jobProgress}%`, 
+                height: '100%', 
+                background: 'var(--accent-lime)',
+                transition: 'width 0.3s ease'
+              }} 
             />
           </div>
-          <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.5rem', display: 'block' }}>
-            {uploading ? 'Transferring file to backend...' : 'Running YOLO inference on ~0.5s sampled frames and generating H.264 video...'}
-          </span>
         </div>
       )}
 
-      {/* Job Results: Video Player & Timeline */}
+      {/* Results View */}
       {jobResult && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           {/* Annotated Video Player */}
-          <div className="glass-card" style={{ padding: '1.25rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <CheckCircle2 size={20} color="var(--status-ok)" />
-                <h3 style={{ fontSize: '1.2rem', fontWeight: 700 }}>Annotated Video Playback</h3>
+          <div className="bento-card bento-card-dark" style={{ padding: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <CheckCircle2 size={20} color="var(--accent-lime)" />
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#FFFFFF' }}>
+                  Annotated Detection Playback
+                </h3>
               </div>
               <a 
                 href={`${API_BASE}${jobResult.output_video_url}`} 
                 download
-                className="btn btn-secondary"
-                style={{ minHeight: '32px', fontSize: '0.78rem' }}
+                className="btn-pill btn-pill-dark"
+                style={{ padding: '8px 16px', fontSize: '0.8rem' }}
               >
-                Download MP4
+                <Download size={14} /> Download MP4
               </a>
             </div>
 
-            <div style={{ borderRadius: 'var(--radius-md)', overflow: 'hidden', background: '#000' }}>
+            <div style={{ borderRadius: '18px', overflow: 'hidden', background: '#000' }}>
               <video 
                 ref={videoPlayerRef}
                 controls 
@@ -240,80 +249,57 @@ export default function VideoUploadView() {
             </div>
           </div>
 
-          {/* Analysis Summary Statistics */}
-          <div className="metrics-grid">
-            <div className="metric-tile glass-card">
-              <span className="label">Analyzed Samples</span>
-              <span className="value" style={{ color: 'var(--accent-blue)' }}>
-                {jobResult.analyzed_samples}
-              </span>
-            </div>
-
-            <div className="metric-tile glass-card">
-              <span className="label">Duration</span>
-              <span className="value">
-                {jobResult.duration_seconds}s
-              </span>
-            </div>
-
-            <div className="metric-tile glass-card">
-              <span className="label">Timeline Events</span>
-              <span className="value" style={{ color: 'var(--status-low)' }}>
-                {jobResult.total_events}
-              </span>
-            </div>
-
-            <div className="metric-tile glass-card">
-              <span className="label">Detected Classes</span>
-              <span className="value" style={{ fontSize: '1.2rem', color: 'var(--text-secondary)' }}>
-                {Object.keys(jobResult.class_counts || {}).join(', ') || 'None'}
-              </span>
-            </div>
-          </div>
-
           {/* Timeline Events List */}
-          <div className="glass-card" style={{ padding: '1.5rem' }}>
-            <h3 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: '0.25rem' }}>Anomaly Event Timeline</h3>
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
+          <div className="bento-card bento-card-dark" style={{ padding: '24px' }}>
+            <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#FFFFFF', marginBottom: '4px' }}>
+              Anomaly Event Timeline
+            </h3>
+            <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '16px' }}>
               Click any timestamp to seek video directly to the detected event
             </p>
 
             {jobResult.timeline?.length === 0 ? (
-              <p style={{ color: 'var(--status-ok)', fontSize: '0.9rem' }}>No empty shelf or low stock events detected throughout the video.</p>
+              <p style={{ color: 'var(--accent-lime)', fontSize: '0.88rem' }}>No empty shelf or low stock events detected throughout the video.</p>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', maxHeight: '350px', overflowY: 'auto' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {jobResult.timeline?.map((ev, i) => (
                   <div 
                     key={i}
                     onClick={() => seekVideo(ev.time_sec)}
                     style={{
-                      background: 'rgba(255, 255, 255, 0.03)',
+                      background: '#1A1A1A',
                       border: '1px solid var(--border-subtle)',
-                      borderRadius: 'var(--radius-sm)',
-                      padding: '0.65rem 0.9rem',
+                      borderRadius: '14px',
+                      padding: '12px 18px',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
                       cursor: 'pointer',
-                      transition: 'var(--transition)'
+                      transition: 'all 0.15s ease'
                     }}
-                    onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--accent-blue)'}
-                    onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--border-subtle)'}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                      <span className={`badge badge-${ev.type === 'empty_shelf' ? 'empty' : (ev.type === 'low_stock' ? 'low' : 'misplaced')}`}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <span style={{
+                        background: ev.type === 'empty_shelf' ? 'var(--status-empty-bg)' : 'var(--status-low-bg)',
+                        color: ev.type === 'empty_shelf' ? 'var(--status-empty)' : 'var(--status-low)',
+                        padding: '3px 10px',
+                        borderRadius: 'var(--radius-pill)',
+                        fontSize: '0.72rem',
+                        fontWeight: 800,
+                        textTransform: 'uppercase'
+                      }}>
                         {ev.type.replace('_', ' ')}
                       </span>
-                      <span style={{ fontSize: '0.88rem', color: 'var(--text-primary)' }}>
+                      <span style={{ fontSize: '0.88rem', color: '#FFFFFF' }}>
                         {ev.message}
                       </span>
                     </div>
 
                     <button 
-                      className="btn btn-secondary" 
-                      style={{ minHeight: '28px', padding: '0.15rem 0.5rem', fontSize: '0.75rem', gap: '0.3rem' }}
+                      className="btn-pill btn-pill-lime" 
+                      style={{ padding: '4px 12px', fontSize: '0.74rem' }}
                     >
-                      <Play size={12} /> {ev.time_sec}s
+                      <Play size={11} fill="#000" /> {ev.time_sec}s
                     </button>
                   </div>
                 ))}

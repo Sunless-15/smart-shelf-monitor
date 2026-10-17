@@ -7,9 +7,8 @@ import {
   AlertTriangle, 
   AlertCircle, 
   Info, 
-  Filter, 
-  RefreshCw,
-  Clock 
+  Clock, 
+  RefreshCw 
 } from 'lucide-react';
 
 export default function AlertsView() {
@@ -31,7 +30,6 @@ export default function AlertsView() {
     }
   };
 
-  // Auto-refresh every 3 seconds as required
   useEffect(() => {
     fetchAlertsData();
     const interval = setInterval(fetchAlertsData, 3000);
@@ -42,7 +40,6 @@ export default function AlertsView() {
     setAckLoading(alertId);
     try {
       await acknowledgeAlert(alertId);
-      // Optimistic update
       setAlerts((prev) =>
         prev.map((a) => (a.id === alertId ? { ...a, acknowledged: true } : a))
       );
@@ -79,117 +76,141 @@ export default function AlertsView() {
   const unackCount = alerts.filter((a) => !a.acknowledged).length;
 
   return (
-    <div>
-      {/* Top Controls */}
-      <div className="glass-card" style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      {/* Top Bento Header Card */}
+      <div className="bento-card bento-card-dark" style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        flexWrap: 'wrap', 
+        gap: '14px',
+        padding: '20px 24px' 
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
           <div style={{
-            width: '38px',
-            height: '38px',
-            borderRadius: 'var(--radius-md)',
-            background: 'var(--status-low-bg)',
-            color: 'var(--status-low)',
+            width: '44px',
+            height: '44px',
+            borderRadius: '50%',
+            background: 'var(--accent-lime-muted)',
+            color: 'var(--accent-lime)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center'
           }}>
-            <Bell size={20} />
+            <Bell size={22} />
           </div>
           <div>
-            <h2 style={{ fontSize: '1.15rem', fontWeight: 700 }}>Alert Center</h2>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-              Auto-refreshes every 3s | {unackCount} unacknowledged
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 800, letterSpacing: '-0.02em', color: '#FFFFFF' }}>
+              Alert Center
+            </h2>
+            <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+              Auto-refreshes every 3s · {unackCount} active unacknowledged
             </span>
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-          {/* Filter Toggle */}
-          <button
-            onClick={() => setUnackOnly(!unackOnly)}
-            className={`btn ${unackOnly ? 'btn-primary' : 'btn-secondary'}`}
-            style={{ minHeight: '36px', fontSize: '0.8rem' }}
-          >
-            <Filter size={14} />
-            <span>{unackOnly ? 'Unacknowledged Only' : 'All Alerts'}</span>
-          </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          {/* Filter Pills */}
+          <div className="pill-tabs">
+            <button
+              onClick={() => setUnackOnly(true)}
+              className={`pill-tab ${unackOnly ? 'active' : ''}`}
+            >
+              Unacknowledged ({unackCount})
+            </button>
+            <button
+              onClick={() => setUnackOnly(false)}
+              className={`pill-tab ${!unackOnly ? 'active' : ''}`}
+            >
+              All Alerts
+            </button>
+          </div>
 
           {unackCount > 0 && (
             <button
               onClick={handleAcknowledgeAll}
-              className="btn btn-secondary"
-              style={{ minHeight: '36px', fontSize: '0.8rem', color: 'var(--status-ok)' }}
+              className="btn-pill btn-pill-lime"
+              style={{ padding: '8px 16px', fontSize: '0.8rem' }}
             >
-              <CheckCheck size={16} />
+              <CheckCheck size={15} />
               <span>Acknowledge All</span>
             </button>
           )}
 
           <button 
             onClick={fetchAlertsData} 
-            className="btn btn-secondary" 
-            style={{ minHeight: '36px', padding: '0.35rem 0.65rem' }}
+            className="btn-round-action btn-round-dark" 
             title="Refresh alerts"
           >
-            <RefreshCw size={14} />
+            <RefreshCw size={15} />
           </button>
         </div>
       </div>
 
       {/* Alerts List */}
       {alerts.length === 0 ? (
-        <div className="glass-card" style={{ textAlign: 'center', padding: '3.5rem', color: 'var(--text-muted)' }}>
-          <CheckCircle size={44} color="var(--status-ok)" style={{ margin: '0 auto 0.75rem', opacity: 0.8 }} />
-          <h3 style={{ fontSize: '1.2rem', color: 'var(--text-primary)', fontWeight: 700 }}>No Active Alerts</h3>
-          <p style={{ fontSize: '0.88rem', marginTop: '0.25rem' }}>
-            {unackOnly ? 'All stock anomalies have been acknowledged.' : 'No alerts have been recorded yet.'}
+        <div className="bento-card bento-card-dark" style={{ textAlign: 'center', padding: '50px 20px', color: 'var(--text-muted)' }}>
+          <CheckCircle size={48} color="var(--accent-lime)" style={{ margin: '0 auto 12px', opacity: 0.9 }} />
+          <h3 style={{ fontSize: '1.2rem', color: '#FFFFFF', fontWeight: 800 }}>No Active Anomalies</h3>
+          <p style={{ fontSize: '0.86rem', marginTop: '4px', color: 'var(--text-secondary)' }}>
+            {unackOnly ? 'All store shelf stock alerts have been cleared.' : 'No alerts have been recorded yet.'}
           </p>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {alerts.map((alert) => {
             const isAck = alert.acknowledged;
             const severity = (alert.severity || 'info').toLowerCase();
             const alertType = alert.type || 'alert';
 
             let icon = <Info size={18} color="var(--status-misplaced)" />;
-            let badgeClass = 'badge-misplaced';
+            let statusColor = 'var(--status-misplaced)';
             if (severity === 'critical' || alertType === 'empty_shelf') {
               icon = <AlertCircle size={18} color="var(--status-empty)" />;
-              badgeClass = 'badge-empty';
+              statusColor = 'var(--status-empty)';
             } else if (severity === 'warning' || alertType === 'low_stock') {
               icon = <AlertTriangle size={18} color="var(--status-low)" />;
-              badgeClass = 'badge-low';
+              statusColor = 'var(--status-low)';
             }
 
             return (
               <div
                 key={alert.id || alert._id}
-                className="glass-card"
+                className="bento-card bento-card-dark"
                 style={{
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  gap: '1rem',
-                  padding: '1rem 1.25rem',
-                  opacity: isAck ? 0.65 : 1,
-                  borderLeft: isAck ? '4px solid var(--border-subtle)' : `4px solid var(--${badgeClass.replace('badge-', 'status-')})`
+                  gap: '16px',
+                  padding: '18px 22px',
+                  opacity: isAck ? 0.6 : 1,
+                  borderLeft: `4px solid ${isAck ? 'var(--border-subtle)' : statusColor}`
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.85rem' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
                   <div style={{ marginTop: '2px' }}>{icon}</div>
                   <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                      <span className={`badge ${badgeClass}`}>{alert.severity || 'ALERT'}</span>
-                      <strong style={{ fontSize: '0.92rem', color: 'var(--text-primary)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                      <span style={{ 
+                        background: 'rgba(255, 255, 255, 0.08)', 
+                        padding: '2px 10px', 
+                        borderRadius: 'var(--radius-pill)', 
+                        fontSize: '0.72rem', 
+                        fontWeight: 800,
+                        textTransform: 'uppercase',
+                        color: statusColor
+                      }}>
+                        {alert.severity || 'ALERT'}
+                      </span>
+                      <strong style={{ fontSize: '0.96rem', color: '#FFFFFF' }}>
                         {alert.zone_name || 'Shelf Zone'}
                       </strong>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                      <span style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <Clock size={12} />
                         {formatTimestamp(alert.timestamp)}
                       </span>
                     </div>
-                    <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', marginTop: '0.35rem' }}>
+                    <p style={{ fontSize: '0.86rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
                       {alert.message}
                     </p>
                   </div>
@@ -200,20 +221,18 @@ export default function AlertsView() {
                     <button
                       onClick={() => handleAcknowledge(alert.id || alert._id)}
                       disabled={ackLoading === (alert.id || alert._id)}
-                      className="btn btn-secondary"
+                      className="btn-pill btn-pill-lime"
                       style={{
-                        minHeight: '34px',
-                        padding: '0.35rem 0.85rem',
-                        fontSize: '0.8rem',
-                        whiteSpace: 'nowrap'
+                        padding: '8px 18px',
+                        fontSize: '0.8rem'
                       }}
                     >
-                      <CheckCircle size={14} color="var(--status-ok)" />
+                      <CheckCircle size={14} />
                       <span>{ackLoading === (alert.id || alert._id) ? 'Saving...' : 'Acknowledge'}</span>
                     </button>
                   ) : (
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontStyle: 'italic', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                      <CheckCheck size={14} color="var(--status-ok)" /> Acknowledged
+                    <span style={{ fontSize: '0.78rem', color: 'var(--accent-lime)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <CheckCheck size={15} /> Acknowledged
                     </span>
                   )}
                 </div>

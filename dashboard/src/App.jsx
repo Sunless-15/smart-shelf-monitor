@@ -157,7 +157,7 @@ export default function App() {
   const pageInfo = getPageInfo();
 
   return (
-    <div className="app-container">
+    <div className="app-layout">
       {/* Cloud Cold Start Waking Up Banner */}
       {serverWakingUp && (
         <div style={{
@@ -199,17 +199,19 @@ export default function App() {
       />
 
       {/* Main App Content Viewport */}
-      <main className="main-content" style={{ marginTop: serverWakingUp ? '2rem' : 0 }}>
-        <Header
-          title={pageInfo.title}
-          subtitle={pageInfo.subtitle}
-          isOnline={isOnline}
-          isDemoMode={isDemoMode}
-          onToggleDemoMode={handleToggleDemoMode}
-          theme={theme}
-          onToggleTheme={handleToggleTheme}
-          onLogout={handleLogout}
-        />
+      <main className="main-viewport" style={{ marginTop: serverWakingUp ? '2rem' : 0 }}>
+        {currentTab !== 'dashboard' && (
+          <Header
+            title={pageInfo.title}
+            subtitle={pageInfo.subtitle}
+            isOnline={isOnline}
+            isDemoMode={isDemoMode}
+            onToggleDemoMode={handleToggleDemoMode}
+            theme={theme}
+            onToggleTheme={handleToggleTheme}
+            onLogout={handleLogout}
+          />
+        )}
 
         {/* Tab Switching Body */}
         {currentTab === 'dashboard' && <LiveDashboard isOnline={isOnline} />}

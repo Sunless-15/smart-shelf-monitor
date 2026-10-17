@@ -18,8 +18,7 @@ import {
   Save, 
   RefreshCw, 
   CheckCircle2, 
-  AlertCircle,
-  Eye
+  AlertCircle
 } from 'lucide-react';
 
 export default function ZonesSettingsView() {
@@ -129,39 +128,40 @@ export default function ZonesSettingsView() {
   };
 
   return (
-    <div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       {/* Toast Alert */}
       {message && (
         <div style={{
-          background: message.type === 'success' ? 'var(--status-ok-bg)' : 'var(--status-empty-bg)',
-          color: message.type === 'success' ? 'var(--status-ok)' : 'var(--status-empty)',
-          border: `1px solid ${message.type === 'success' ? 'rgba(16, 185, 129, 0.4)' : 'rgba(239, 68, 68, 0.4)'}`,
-          padding: '0.75rem 1rem',
-          borderRadius: 'var(--radius-md)',
-          marginBottom: '1.25rem',
+          background: message.type === 'success' ? 'var(--accent-lime-muted)' : 'rgba(255, 77, 79, 0.15)',
+          color: message.type === 'success' ? 'var(--accent-lime)' : '#FF4D4F',
+          border: `1px solid ${message.type === 'success' ? 'rgba(228, 255, 26, 0.4)' : 'rgba(255, 77, 79, 0.4)'}`,
+          padding: '12px 18px',
+          borderRadius: 'var(--radius-card-sm)',
           display: 'flex',
           alignItems: 'center',
-          gap: '0.5rem',
-          fontSize: '0.9rem',
+          gap: '8px',
+          fontSize: '0.88rem',
           fontWeight: 600
         }}>
-          {message.type === 'success' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
+          {message.type === 'success' ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
           <span>{message.text}</span>
         </div>
       )}
 
       {/* Section 1: Video Source Layer Config */}
-      <div className="glass-card" style={{ marginBottom: '1.75rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '0.5rem' }}>
-          <Video size={22} color="var(--accent-blue)" />
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Pluggable Video Source</h2>
+      <div className="bento-card bento-card-dark" style={{ padding: '24px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
+          <Video size={22} color="var(--accent-lime)" />
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#FFFFFF' }}>
+            Pluggable Video & Camera Source
+          </h2>
         </div>
-        <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', marginBottom: '1.25rem' }}>
+        <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', marginBottom: '18px' }}>
           Switch camera feeds seamlessly at runtime. Select local webcam, looped demo video, or paste the ESP32-CAM MJPEG stream URL (e.g. <code>http://&lt;esp32-ip&gt;:81/stream</code>).
         </p>
 
         {/* Source Radio Selector */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem', marginBottom: '1.25rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '18px' }}>
           {[
             { id: 'webcam', label: 'Laptop Webcam', icon: Camera, defaultVal: '0' },
             { id: 'video', label: 'Sample Video File', icon: Video, defaultVal: 'sample_data/sample_shelf.mp4' },
@@ -177,28 +177,30 @@ export default function ZonesSettingsView() {
                   setSourceValueInput(src.defaultVal);
                 }}
                 style={{
-                  background: isSelected ? 'rgba(59, 130, 246, 0.15)' : 'var(--bg-input)',
-                  border: isSelected ? '1px solid var(--accent-blue)' : '1px solid var(--border-subtle)',
-                  borderRadius: 'var(--radius-md)',
-                  padding: '0.9rem',
+                  background: isSelected ? 'var(--accent-lime-muted)' : '#101010',
+                  border: isSelected ? '1.5px solid var(--accent-lime)' : '1px solid var(--border-subtle)',
+                  borderRadius: '16px',
+                  padding: '14px 18px',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '0.65rem',
-                  transition: 'var(--transition)'
+                  gap: '12px',
+                  transition: 'all 0.15s ease'
                 }}
               >
-                <Icon size={18} color={isSelected ? 'var(--accent-blue)' : 'var(--text-muted)'} />
-                <span style={{ fontSize: '0.88rem', fontWeight: 600 }}>{src.label}</span>
+                <Icon size={18} color={isSelected ? 'var(--accent-lime)' : 'var(--text-muted)'} />
+                <span style={{ fontSize: '0.88rem', fontWeight: isSelected ? 700 : 500, color: isSelected ? '#FFFFFF' : 'var(--text-secondary)' }}>
+                  {src.label}
+                </span>
               </div>
             );
           })}
         </div>
 
         {/* Source Value Input */}
-        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
           <div style={{ flex: 1, minWidth: '240px' }}>
-            <label style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.25rem' }}>
+            <label style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>
               {selectedSourceType === 'webcam' && 'Webcam Device Index (0 = built-in camera, 1 = external USB)'}
               {selectedSourceType === 'video' && 'Path to Video File on Disk (looped playback)'}
               {selectedSourceType === 'stream' && 'ESP32-CAM / MJPEG HTTP Stream URL'}
@@ -208,15 +210,24 @@ export default function ZonesSettingsView() {
               value={sourceValueInput} 
               onChange={(e) => setSourceValueInput(e.target.value)} 
               placeholder={selectedSourceType === 'stream' ? 'http://192.168.1.100:81/stream' : 'Source value'} 
-              className="input-field"
+              style={{
+                width: '100%',
+                background: '#101010',
+                border: '1px solid var(--border-subtle)',
+                borderRadius: 'var(--radius-pill)',
+                padding: '10px 18px',
+                color: '#FFFFFF',
+                fontSize: '0.88rem',
+                outline: 'none'
+              }}
             />
           </div>
 
           <button 
             onClick={handleSourceSwitch} 
             disabled={sourceLoading}
-            className="btn btn-primary"
-            style={{ minHeight: '42px', marginTop: '1.25rem' }}
+            className="btn-pill btn-pill-lime"
+            style={{ padding: '10px 22px' }}
           >
             <Save size={16} />
             <span>{sourceLoading ? 'Switching...' : 'Apply Video Source'}</span>
@@ -225,40 +236,47 @@ export default function ZonesSettingsView() {
 
         {/* Active Source Health Badge */}
         {sourceStatus && (
-          <div style={{ marginTop: '1rem', fontSize: '0.8rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-            <span>Active Source: <strong style={{ color: 'var(--text-primary)' }}>{sourceStatus.type}</strong> ({sourceStatus.value})</span>
-            <span className={`badge ${sourceStatus.is_active ? 'badge-ok' : 'badge-empty'}`}>
+          <div style={{ marginTop: '16px', fontSize: '0.82rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span>Active Source: <strong style={{ color: '#FFFFFF' }}>{sourceStatus.type}</strong> ({sourceStatus.value})</span>
+            <span style={{
+              background: sourceStatus.is_active ? 'var(--accent-lime)' : 'var(--status-empty-bg)',
+              color: sourceStatus.is_active ? '#000000' : 'var(--status-empty)',
+              padding: '2px 10px',
+              borderRadius: 'var(--radius-pill)',
+              fontWeight: 800,
+              fontSize: '0.7rem'
+            }}>
               {sourceStatus.is_active ? 'ACTIVE' : 'OFFLINE'}
             </span>
           </div>
         )}
       </div>
 
-      {/* Section 2: Shelf Zones Configuration & Visual Alignment */}
-      <div className="glass-card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+      {/* Section 2: Shelf Zones Configuration */}
+      <div className="bento-card bento-card-dark" style={{ padding: '24px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', flexWrap: 'wrap', gap: '12px' }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Sliders size={20} color="var(--accent-cyan)" />
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Shelf Zone Definitions</h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <Sliders size={20} color="var(--accent-lime)" />
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#FFFFFF' }}>Shelf Zone Definitions</h2>
             </div>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+            <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)' }}>
               Configure named normalized detection rectangles (0.0 to 1.0 coordinates)
             </p>
           </div>
 
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', gap: '10px' }}>
             <button 
               onClick={() => setSnapshotKey(Date.now())} 
-              className="btn btn-secondary" 
-              style={{ minHeight: '34px', fontSize: '0.8rem' }}
+              className="btn-pill btn-pill-dark" 
+              style={{ padding: '8px 16px', fontSize: '0.8rem' }}
             >
-              <RefreshCw size={14} /> Refresh Snapshot
+              <RefreshCw size={14} /> Refresh Frame
             </button>
             <button 
               onClick={startNewZone} 
-              className="btn btn-primary" 
-              style={{ minHeight: '34px', fontSize: '0.8rem' }}
+              className="btn-pill btn-pill-lime" 
+              style={{ padding: '8px 18px', fontSize: '0.8rem' }}
             >
               <Plus size={14} /> Add Shelf Zone
             </button>
@@ -271,9 +289,9 @@ export default function ZonesSettingsView() {
           width: '100%', 
           aspectRatio: '16 / 9', 
           background: '#000', 
-          borderRadius: 'var(--radius-md)', 
+          borderRadius: '18px', 
           overflow: 'hidden', 
-          marginBottom: '1.5rem',
+          marginBottom: '20px',
           border: '1px solid var(--border-subtle)'
         }}>
           <img 
@@ -301,21 +319,21 @@ export default function ZonesSettingsView() {
                   top,
                   width,
                   height,
-                  border: isEditing ? '2px solid #3b82f6' : '2px dashed #10b981',
-                  background: isEditing ? 'rgba(59, 130, 246, 0.2)' : 'rgba(16, 185, 129, 0.1)',
+                  border: isEditing ? '2.5px solid var(--accent-lime)' : '2px dashed #FFFFFF',
+                  background: isEditing ? 'rgba(228, 255, 26, 0.25)' : 'rgba(255, 255, 255, 0.08)',
                   pointerEvents: 'none',
                   display: 'flex',
                   alignItems: 'flex-start',
-                  padding: '2px 4px'
+                  padding: '4px'
                 }}
               >
                 <span style={{ 
-                  background: isEditing ? '#3b82f6' : '#10b981', 
-                  color: '#fff', 
-                  fontSize: '10px', 
-                  fontWeight: 700, 
-                  padding: '1px 4px', 
-                  borderRadius: '3px' 
+                  background: isEditing ? 'var(--accent-lime)' : '#FFFFFF', 
+                  color: '#000000', 
+                  fontSize: '11px', 
+                  fontWeight: 800, 
+                  padding: '2px 6px', 
+                  borderRadius: '4px' 
                 }}>
                   {z.name}
                 </span>
@@ -324,53 +342,80 @@ export default function ZonesSettingsView() {
           })}
         </div>
 
-        {/* Zone Editor Modal / Form */}
+        {/* Zone Editor Form */}
         {editingZoneId && (
           <div style={{
-            background: 'rgba(255, 255, 255, 0.04)',
-            border: '1px solid var(--accent-blue)',
-            borderRadius: 'var(--radius-md)',
-            padding: '1.25rem',
-            marginBottom: '1.5rem'
+            background: '#101010',
+            border: '1.5px solid var(--accent-lime)',
+            borderRadius: '18px',
+            padding: '20px',
+            marginBottom: '20px'
           }}>
-            <h4 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: '1rem' }}>
+            <h4 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#FFFFFF', marginBottom: '14px' }}>
               {editingZoneId === 'new' ? 'New Shelf Zone' : `Editing: ${zoneForm.name}`}
             </h4>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px', marginBottom: '14px' }}>
               <div>
-                <label style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>Zone Name</label>
+                <label style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Zone Name</label>
                 <input 
                   type="text" 
                   value={zoneForm.name} 
                   onChange={(e) => setZoneForm({ ...zoneForm, name: e.target.value })} 
-                  className="input-field" 
+                  style={{
+                    width: '100%',
+                    background: '#1A1A1A',
+                    border: '1px solid var(--border-subtle)',
+                    borderRadius: 'var(--radius-pill)',
+                    padding: '8px 16px',
+                    color: '#FFFFFF',
+                    fontSize: '0.86rem',
+                    outline: 'none'
+                  }}
                 />
               </div>
 
               <div>
-                <label style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>Expected Product Class (COCO/YOLO)</label>
+                <label style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Expected Product Class</label>
                 <input 
                   type="text" 
                   value={zoneForm.expected_class} 
                   onChange={(e) => setZoneForm({ ...zoneForm, expected_class: e.target.value.toLowerCase() })} 
-                  className="input-field" 
+                  style={{
+                    width: '100%',
+                    background: '#1A1A1A',
+                    border: '1px solid var(--border-subtle)',
+                    borderRadius: 'var(--radius-pill)',
+                    padding: '8px 16px',
+                    color: '#FFFFFF',
+                    fontSize: '0.86rem',
+                    outline: 'none'
+                  }}
                 />
               </div>
 
               <div>
-                <label style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>Full Capacity Count</label>
+                <label style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Full Capacity Count</label>
                 <input 
                   type="number" 
                   min="1" 
                   value={zoneForm.full_count} 
                   onChange={(e) => setZoneForm({ ...zoneForm, full_count: parseInt(e.target.value) || 1 })} 
-                  className="input-field" 
+                  style={{
+                    width: '100%',
+                    background: '#1A1A1A',
+                    border: '1px solid var(--border-subtle)',
+                    borderRadius: 'var(--radius-pill)',
+                    padding: '8px 16px',
+                    color: '#FFFFFF',
+                    fontSize: '0.86rem',
+                    outline: 'none'
+                  }}
                 />
               </div>
 
               <div>
-                <label style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>Low Stock Threshold (0.0 - 1.0)</label>
+                <label style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Low Stock Threshold (0.0 - 1.0)</label>
                 <input 
                   type="number" 
                   step="0.05" 
@@ -378,20 +423,28 @@ export default function ZonesSettingsView() {
                   max="0.9" 
                   value={zoneForm.low_threshold} 
                   onChange={(e) => setZoneForm({ ...zoneForm, low_threshold: parseFloat(e.target.value) || 0.35 })} 
-                  className="input-field" 
+                  style={{
+                    width: '100%',
+                    background: '#1A1A1A',
+                    border: '1px solid var(--border-subtle)',
+                    borderRadius: 'var(--radius-pill)',
+                    padding: '8px 16px',
+                    color: '#FFFFFF',
+                    fontSize: '0.86rem',
+                    outline: 'none'
+                  }}
                 />
               </div>
             </div>
 
-            {/* Coordinates (x1, y1, x2, y2) */}
-            <div style={{ marginBottom: '1rem' }}>
-              <label style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.4rem' }}>
+            {/* Coordinates */}
+            <div style={{ marginBottom: '14px' }}>
+              <label style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>
                 Normalized Coordinates (X1: {zoneForm.coords.x1}, Y1: {zoneForm.coords.y1}, X2: {zoneForm.coords.x2}, Y2: {zoneForm.coords.y2})
               </label>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
                 {['x1', 'y1', 'x2', 'y2'].map((coordKey) => (
                   <div key={coordKey}>
-                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>{coordKey}</span>
                     <input 
                       type="number" 
                       step="0.02" 
@@ -405,66 +458,76 @@ export default function ZonesSettingsView() {
                           [coordKey]: parseFloat(e.target.value) || 0.0
                         }
                       })} 
-                      className="input-field" 
+                      style={{
+                        width: '100%',
+                        background: '#1A1A1A',
+                        border: '1px solid var(--border-subtle)',
+                        borderRadius: 'var(--radius-pill)',
+                        padding: '8px 12px',
+                        color: '#FFFFFF',
+                        fontSize: '0.84rem',
+                        outline: 'none'
+                      }}
                     />
                   </div>
                 ))}
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <button onClick={handleSaveZone} className="btn btn-primary" style={{ minHeight: '36px', fontSize: '0.85rem' }}>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button onClick={handleSaveZone} className="btn-pill btn-pill-lime" style={{ padding: '8px 18px', fontSize: '0.84rem' }}>
                 <Save size={14} /> Save Zone
               </button>
-              <button onClick={() => setEditingZoneId(null)} className="btn btn-secondary" style={{ minHeight: '36px', fontSize: '0.85rem' }}>
+              <button onClick={() => setEditingZoneId(null)} className="btn-pill btn-pill-dark" style={{ padding: '8px 18px', fontSize: '0.84rem' }}>
                 Cancel
               </button>
             </div>
           </div>
         )}
 
-        {/* Existing Zones Table/Cards */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+        {/* Existing Zones List */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           {zones.map((zone) => {
             const zid = zone.id || zone._id;
             return (
               <div 
                 key={zid}
                 style={{
-                  background: 'rgba(255, 255, 255, 0.02)',
+                  background: '#121212',
                   border: '1px solid var(--border-subtle)',
-                  borderRadius: 'var(--radius-sm)',
-                  padding: '0.75rem 1rem',
+                  borderRadius: '16px',
+                  padding: '14px 20px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   flexWrap: 'wrap',
-                  gap: '0.75rem'
+                  gap: '12px'
                 }}
               >
                 <div>
-                  <strong style={{ fontSize: '0.95rem' }}>{zone.name}</strong>
-                  <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'flex', gap: '0.75rem', marginTop: '0.2rem' }}>
-                    <span>Product: <strong>{zone.expected_class}</strong></span>
-                    <span>Full Capacity: <strong>{zone.full_count}</strong></span>
+                  <strong style={{ fontSize: '0.98rem', color: '#FFFFFF' }}>{zone.name}</strong>
+                  <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', display: 'flex', gap: '12px', marginTop: '3px' }}>
+                    <span>Product: <strong style={{ color: 'var(--accent-lime)' }}>{zone.expected_class}</strong></span>
+                    <span>Full: <strong>{zone.full_count} items</strong></span>
                     <span>Threshold: <strong>{Math.round(zone.low_threshold * 100)}%</strong></span>
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '0.4rem' }}>
+                <div style={{ display: 'flex', gap: '8px' }}>
                   <button 
                     onClick={() => handleEditZone(zone)}
-                    className="btn btn-secondary"
-                    style={{ minHeight: '30px', padding: '0.25rem 0.65rem', fontSize: '0.75rem' }}
+                    className="btn-pill btn-pill-dark"
+                    style={{ padding: '6px 14px', fontSize: '0.78rem' }}
                   >
                     Edit
                   </button>
                   <button 
                     onClick={() => handleDeleteZone(zid)}
-                    className="btn btn-secondary"
-                    style={{ minHeight: '30px', padding: '0.25rem 0.65rem', fontSize: '0.75rem', color: 'var(--status-empty)' }}
+                    className="btn-round-action btn-round-dark"
+                    style={{ width: '34px', height: '34px', color: 'var(--status-empty)' }}
+                    title="Delete Zone"
                   >
-                    <Trash2 size={13} />
+                    <Trash2 size={14} />
                   </button>
                 </div>
               </div>

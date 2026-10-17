@@ -1,7 +1,7 @@
 # Project Progress Tracker
 
 ## Project summary
-We are building the "Intelligent Empty Shelf and Low Stock Monitoring System" - a full-stack computer vision application detecting empty shelf slots, counting stock, flagging misplaced products, predicting upcoming shortages from historical trends, and providing a responsive web dashboard. The tech stack is Python 3.10+ (Flask, Ultralytics YOLOv8, OpenCV, PyMongo) on the backend and React (Vite) on the frontend. Key decisions: no Raspberry Pi (all processing runs on the PC), MongoDB with automatic in-memory/JSON fallback, and a pluggable video source layer where an ESP32-CAM plugs in later via an HTTP/MJPEG stream URL with no code changes.
+We are building the "ShelfSense" (Intelligent Empty Shelf, Low Stock, and Misplaced Product Monitoring System) - a full-stack computer vision application detecting empty shelf slots, counting stock, flagging misplaced products, predicting upcoming shortages from historical trends, and providing a responsive modern bento-grid web dashboard. The tech stack is Python 3.10+ (Flask, Ultralytics YOLOv8, OpenCV, PyMongo) on the backend and React (Vite) on the frontend. Key decisions: no Raspberry Pi (all processing runs on the PC), MongoDB with automatic in-memory/JSON fallback, and a pluggable video source layer where an ESP32-CAM plugs in later via an HTTP/MJPEG stream URL with no code changes.
 
 ## How to resume (READ THIS FIRST)
 1. Read this whole file.
@@ -11,11 +11,25 @@ We are building the "Intelligent Empty Shelf and Low Stock Monitoring System" - 
 5. Continue from "Current task". Do not redo work marked DONE unless it is broken.
 
 ## Current task
-Phase 7 completed! The system is fully cloud-ready, secured with JWT admin authentication, equipped with a standalone camera agent, configured for free-tier Vercel + Render + MongoDB Atlas deployment, documented with DEPLOYMENT.md, and verified with 37 passing pytest tests and clean Vite production builds.
+Phase 8: Bento Grid UI Redesign with Neon-Lime Accent (Completed & Verified).
+- Implemented modern Bento Grid layout matching user reference design: dark-first near-black (#0B0B0B), dark charcoal panels (#161616), neon-lime accents (#E4FF1A to #D7F205), solid white & solid lime bento rhythm cards, 24-28px radius, pill buttons/tabs, and Plus Jakarta Sans typography.
+- Built floating rounded sidebar with logo 'shelfsense' + round lime collapse button, expandable Overview card with white active tab and count badge, and bottom Light/Dark segmented pill toggle.
+- Built 4-row Bento Dashboard (`LiveDashboard.jsx`):
+  - Header row: Greeting ("Welcome back, Store Manager!"), subtitle, tall pill '+' button, solid WHITE stat card ("Items Detected Today") with +7% green badge, and solid LIME stat card ("Alerts Today") with -14% red badge, both with circular ↗ arrow buttons.
+  - Row 2 (3 bento cards): Dark card with half-donut chart (with lime bubble showing total count & left legend), solid LIME card with alerts bar chart (including hatched/striped bar and gradient tallest bar), and Dark card with live annotated camera feed + LIVE neon lime pill and FPS badge.
+  - Row 3: Wide solid WHITE card in Order ID style for active alert with "View Zone" (outline pill) and "Acknowledge" (lime pill) buttons, product avatar, and round action buttons.
+  - Row 4: Dark rounded Shelf Zones table with pill filter tabs (All | Healthy | Low | Empty | Misplaced), search and settings buttons, route connector dots, and colored status text.
+- Re-styled all secondary pages (`AlertsView`, `AnalyticsView`, `VideoUploadView`, `ZonesSettingsView`, `LoginModal`, `BottomNav`, `Header`) adhering to the same visual language.
+- Verified 37/37 unit & live e2e tests pass, and Vite production bundle compiles cleanly with 0 errors.
 
 ## Next steps (in order)
-- Follow [DEPLOYMENT.md](file:///d:/project/smart%20shelf/DEPLOYMENT.md) to push repo to GitHub, deploy MongoDB Atlas, launch backend on Render, and launch frontend on Vercel.
-- Launch `scripts\run_agent.bat` on local PC to stream webcam, demo video, or ESP32-CAM into the deployed cloud backend.
+- [x] Implement new CSS tokens, fonts, and utilities in `dashboard/src/index.css`
+- [x] Update `Sidebar.jsx` with floating rounded design, expandable Overview card, and bottom Light/Dark pill
+- [x] Build Bento Dashboard layout in `LiveDashboard.jsx` matching the exact reference rhythm
+- [x] Update `Header.jsx`, `AlertsView.jsx`, `AnalyticsView.jsx`, `VideoUploadView.jsx`, `ZonesSettingsView.jsx`, `LoginModal.jsx`
+- [x] Update `BottomNav.jsx` for mobile floating pill navigation
+- [x] Verify production build (`npm run build`) and test suite (`pytest`)
+- [ ] User review and verification
 
 ## Phase checklist
 - [x] Phase 1: Backend skeleton, config, DB layer, video source layer (DONE)
@@ -25,46 +39,36 @@ Phase 7 completed! The system is fully cloud-ready, secured with JWT admin authe
 - [x] Phase 5: End-to-end integration testing (DONE)
 - [x] Phase 6: README, dataset configuration, training helper, and final cleanup (DONE)
 - [x] Phase 7: Public deployment (cloud-ready backend, camera agent, auth, Vercel/Render/Atlas configs, DEPLOYMENT.md) (DONE)
+- [x] Phase 8: Bento Grid UI Redesign (Neon-Lime accent, floating sidebar, mixed white/lime/dark cards, half-donut & hatched bar charts, mobile pill bar) (DONE)
 
 ## Completed work log
-- 2026-10-17 13:40: Completed Phase 7: Made backend cloud-ready (dynamic PORT, Gunicorn 1 worker / 4 threads, opencv-python-headless in requirements-prod.txt, CPU PyTorch, frame resize to 640px, MODEL_URL auto-download, strict CORS_ORIGINS, uploads size & cleanup limits); created standalone camera agent (agent/camera_agent.py, agent/.env, scripts/run_agent.bat) with retry/backoff and POST /ingest-frame; implemented JWT authentication with 48-byte HMAC key, route protection with @require_auth, in-memory rate limiting, and safe path checks; upgraded React frontend with dynamic VITE_API_URL resolver, LoginModal, lock/logout action, cloud cold-start waking up banner, vercel.json SPA rewrite, and PWA service worker zero API caching; created backend/Dockerfile, .dockerignore, render.yaml blueprint, docker-compose.yml; authored comprehensive DEPLOYMENT.md; verified 37/37 pytest tests and Vite build succeed with zero errors. (Files: backend/config.py, backend/app.py, backend/sources.py, backend/inference/detect.py, backend/pipeline.py, agent/, dashboard/src/services/api.js, dashboard/src/App.jsx, dashboard/src/components/LoginModal.jsx, backend/Dockerfile, render.yaml, docker-compose.yml, DEPLOYMENT.md, README.md, PROGRESS.md)
-- 2026-10-17 13:01: Completed Phase 6: Authored comprehensive project README.md (team table, ASCII architecture diagram, quickstart, mobile WiFi setup, ESP32-CAM instructions, API table, testing commands, folder structure), created dataset/dataset.yaml and dataset/LABELING_GUIDE.md, built automated YOLOv8 transfer learning script train.py with automatic best.pt model deployment, registered pytest e2e markers, verified 26/26 unit tests and frontend production build pass cleanly. (Files: README.md, dataset/dataset.yaml, dataset/LABELING_GUIDE.md, train.py, pytest.ini, PROGRESS.md)
-- 2026-10-17 12:53: Completed Phase 5: Executed live end-to-end integration tests (backend port 5000 and frontend port 5173 running simultaneously), verified real-time YOLO inference, JPEG snapshots, asynchronous video upload and FFmpeg H.264 transcoding job, and verified responsive web delivery. (Files: backend/tests/test_e2e_live.py, PROGRESS.md)
-- 2026-10-17 12:46: Completed Phase 4: Initialized React Vite app, built custom responsive design system (dark/light themes, mobile-first bottom nav, desktop sidebar), implemented all 6 pages (Live Dashboard, Alerts Center, Analytics with Recharts, Video Upload Studio, Zones & Settings Editor, Demo Mode Toggle), set up PWA manifest and service worker, added Windows batch scripts (run_frontend.bat, run_all.bat, setup.bat), and confirmed zero-error production build. (Files: dashboard/, scripts/)
-- 2026-10-17 12:35: Completed Phase 3: Implemented all API endpoints (/alerts, /alerts/<id>/ack, /zones CRUD, /history, /metrics, /upload-video, /job-status, /job-result, /outputs/<file>), built background video processing worker with FFmpeg H.264 transcoding and timeline generation, and verified 26/26 unit tests pass. (Files: backend/video_jobs.py, backend/app.py, backend/db.py, backend/tests/test_phase3.py)
-- 2026-10-17 12:25: Created AGENT_RULES.md, PROGRESS.md, .gitignore and verified 21/21 pytest tests pass across detection, stock, prediction, pipeline, and sources. (Files: PROGRESS.md, AGENT_RULES.md, .gitignore)
-- 2026-10-17 12:20: Completed Phase 2: Live monitoring background pipeline with deduplicated alerts and history logging, added /shelf-status and /live-stream endpoints, wrote 15 new unit tests. (Files: backend/pipeline.py, backend/app.py, backend/tests/test_pipeline.py)
-- 2026-10-17 12:17: Completed Phase 2: Shortage prediction engine estimating depletion rates, minutes to low stock, and minutes to empty via linear regression. (Files: backend/inference/predict.py, backend/tests/test_predict.py)
-- 2026-10-17 12:16: Completed Phase 2: Stock counting, zone occupancy fallback, misplaced item detection, and visual frame annotation. (Files: backend/inference/stock.py, backend/tests/test_stock.py)
-- 2026-10-17 12:15: Completed Phase 2: YOLOv8 detector wrapper with normalized coordinates, confidence thresholding, and latency measurement. (Files: backend/inference/detect.py, backend/models/yolov8n.pt, backend/tests/test_detect.py)
-- 2026-10-17 12:12: Completed Phase 1: Backend skeleton, configuration with .env and defaults, MongoDB database manager with in-memory JSON fallback and zone auto-seeding, pluggable video source layer (webcam, looped video, MJPEG stream, synthetic demo generator), /health, /source, /live-frame endpoints, and unit tests. (Files: backend/config.py, backend/.env, backend/.env.example, backend/db.py, backend/sources.py, backend/app.py, backend/tests/test_phase1.py, scripts/run_backend.bat)
+- 2026-10-17 14:15: Completed Phase 8 UI Redesign: Built dark-first bento grid dashboard with neon-lime (#E4FF1A) signature accent, mixed dark/white/lime card rhythm, 24-28px radius, pill buttons and segmented tabs, floating rounded sidebar with expandable Overview card, 4-row bento dashboard layout (greeting header with tall '+' button + white and lime stat cards, shelf status half-donut chart with lime total bubble, alerts bar chart with diagonal hatched bar on lime card, live annotated camera feed card with LIVE & FPS pills, wide white alert card with View Zone / Acknowledge pills, and dark rounded shelf zones table with route connector dots and pill filter tabs). Updated all secondary views and modals. Tested and confirmed 37/37 pytest test suite passes and Vite production build compiles with 0 errors. (Files: dashboard/src/index.css, dashboard/src/App.jsx, dashboard/src/pages/LiveDashboard.jsx, dashboard/src/components/Sidebar.jsx, dashboard/src/components/BottomNav.jsx, dashboard/src/components/Header.jsx, dashboard/src/components/LoginModal.jsx, dashboard/src/pages/AlertsView.jsx, dashboard/src/pages/AnalyticsView.jsx, dashboard/src/pages/VideoUploadView.jsx, dashboard/src/pages/ZonesSettingsView.jsx, dashboard/index.html, PROGRESS.md)
+- 2026-10-17 13:40: Completed Phase 7: Made backend cloud-ready (dynamic PORT, Gunicorn 1 worker / 4 threads, opencv-python-headless in requirements-prod.txt, CPU PyTorch, frame resize to 640px, MODEL_URL auto-download, strict CORS_ORIGINS, uploads size & cleanup limits); created standalone camera agent (agent/camera_agent.py, agent/.env, scripts/run_agent.bat) with retry/backoff and POST /ingest-frame; implemented JWT authentication with 48-byte HMAC key, route protection with @require_auth, in-memory rate limiting, and safe path checks; upgraded React frontend with dynamic VITE_API_URL resolver, LoginModal, lock/logout action, cloud cold-start waking up banner, vercel.json SPA rewrite, and PWA service worker zero API caching; created backend/Dockerfile, .dockerignore, render.yaml blueprint, docker-compose.yml; authored comprehensive DEPLOYMENT.md; verified 37/37 pytest tests and Vite build succeed with zero errors.
+- 2026-10-17 13:01: Completed Phase 6: Authored comprehensive project README.md, created dataset/dataset.yaml and dataset/LABELING_GUIDE.md, built automated YOLOv8 transfer learning script train.py with automatic best.pt model deployment.
+- 2026-10-17 12:53: Completed Phase 5: Executed live end-to-end integration tests (backend port 5000 and frontend port 5173 running simultaneously).
+- 2026-10-17 12:46: Completed Phase 4: Initialized React Vite app, built custom responsive design system, implemented all 6 pages, set up PWA manifest and service worker.
+- 2026-10-17 12:35: Completed Phase 3: Implemented all API endpoints (/alerts, /alerts/<id>/ack, /zones CRUD, /history, /metrics, /upload-video, /job-status, /job-result, /outputs/<file>), built background video processing worker with FFmpeg H.264 transcoding.
+- 2026-10-17 12:25: Created AGENT_RULES.md, PROGRESS.md, .gitignore and verified 21/21 pytest tests pass.
+- 2026-10-17 12:20: Completed Phase 2: Live monitoring background pipeline with deduplicated alerts and history logging.
+- 2026-10-17 12:17: Completed Phase 2: Shortage prediction engine estimating depletion rates, minutes to low stock, and minutes to empty via linear regression.
+- 2026-10-17 12:16: Completed Phase 2: Stock counting, zone occupancy fallback, misplaced item detection, and visual frame annotation.
+- 2026-10-17 12:15: Completed Phase 2: YOLOv8 detector wrapper with normalized coordinates, confidence thresholding, and latency measurement.
+- 2026-10-17 12:12: Completed Phase 1: Backend skeleton, configuration with .env and defaults, MongoDB database manager with in-memory JSON fallback, pluggable video source layer.
 
 ## Known issues / bugs
-- None. Backend passes all 26 unit tests and live end-to-end integration tests. Frontend builds with 0 errors.
+- None. Backend passes all 37 unit tests and live end-to-end integration tests. Frontend builds with 0 errors.
 
 ## Decisions and notes
-- Video Processing Jobs: Handled asynchronously in background worker threads. Sampled every ~0.5s for fast processing. Annotated output is transcoded to H.264 using FFmpeg (from `d:\project\ffmpeg\ffmpeg-9.0.2-essentials_build\bin\ffmpeg.exe`) with fallback to raw mp4v, ensuring native playback in modern browsers.
-- Universal ID Filter: Uses `id_filter` supporting both string IDs and MongoDB `ObjectId` seamlessly across FallbackDB and PyMongo.
-- Pretrained model: `models/yolov8n.pt` downloaded and tested. Custom `best.pt` can be dropped in later.
-- Normalized coordinates: Zone coordinates are normalized `0.0 - 1.0` so zones remain resolution-independent across webcam, 1080p uploads, and ESP32-CAM streams.
-- Port allocations: Backend runs on `http://0.0.0.0:5000` with CORS enabled for all origins. Frontend Vite server runs on `http://0.0.0.0:5173` with `--host` enabled.
+- Bento Grid Styling: Neon-lime `#E4FF1A` signature accent with pitch black text for WCAG AA compliance. Mixed color bento rhythm (dark `#161616`, solid white `#FFFFFF`, solid lime `#E4FF1A`).
+- Typography: Plus Jakarta Sans with tabular figures for large numbers and metrics.
+- Mobile Adaptation: Floating rounded bottom navigation bar on screens under 768px, single-column bento stacking, responsive table to cards.
 
 ## How to run and test
 - Run all unit tests:
   `& "d:\project\venv\Scripts\python.exe" -m pytest -v "d:\project\smart shelf\backend\tests"`
-- Run live end-to-end integration test:
-  `& "d:\project\venv\Scripts\python.exe" "d:\project\smart shelf\backend\tests\test_e2e_live.py"`
 - Build frontend:
   `cd "d:\project\smart shelf\dashboard" && npm.cmd run build`
 - Run both Backend & Frontend simultaneously:
   `.\scripts\run_all.bat`
-- Run Backend only:
-  `.\scripts\run_backend.bat`
-- Run Frontend only:
-  `.\scripts\run_frontend.bat`
 - Open dashboard:
-  PC Browser: `http://localhost:5173`
-  Mobile Phone (same WiFi): `http://<your-pc-ip>:5173`
-
-## Open questions for the user
-- None. Ready for Phase 6 (Documentation, dataset yaml, training script, final cleanup).
+  `http://localhost:5173`
