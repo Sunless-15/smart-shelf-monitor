@@ -7,11 +7,15 @@ __pycache__/
 htmlcov/
 *.log
 
-# Environments
+# Environments & Secrets
 .env
+.env.*
+!.env.example
+agent/.env
 .venv/
 venv/
 ENV/
+runs/
 
 # Dependencies
 node_modules/

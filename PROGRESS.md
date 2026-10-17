@@ -11,11 +11,11 @@ We are building the "Intelligent Empty Shelf and Low Stock Monitoring System" - 
 5. Continue from "Current task". Do not redo work marked DONE unless it is broken.
 
 ## Current task
-All phases (1 through 6) completed, tested, and verified end-to-end!
+Phase 7 completed! The system is fully cloud-ready, secured with JWT admin authentication, equipped with a standalone camera agent, configured for free-tier Vercel + Render + MongoDB Atlas deployment, documented with DEPLOYMENT.md, and verified with 37 passing pytest tests and clean Vite production builds.
 
 ## Next steps (in order)
-- Project complete. Run `.\scripts\run_all.bat` to launch both servers.
-- Optional: Collect custom dataset images, run `python train.py`, and update `backend/.env` with `MODEL_PATH=models/best.pt`.
+- Follow [DEPLOYMENT.md](file:///d:/project/smart%20shelf/DEPLOYMENT.md) to push repo to GitHub, deploy MongoDB Atlas, launch backend on Render, and launch frontend on Vercel.
+- Launch `scripts\run_agent.bat` on local PC to stream webcam, demo video, or ESP32-CAM into the deployed cloud backend.
 
 ## Phase checklist
 - [x] Phase 1: Backend skeleton, config, DB layer, video source layer (DONE)
@@ -24,8 +24,10 @@ All phases (1 through 6) completed, tested, and verified end-to-end!
 - [x] Phase 4: React dashboard (6 pages), responsive and PWA basics (DONE)
 - [x] Phase 5: End-to-end integration testing (DONE)
 - [x] Phase 6: README, dataset configuration, training helper, and final cleanup (DONE)
+- [x] Phase 7: Public deployment (cloud-ready backend, camera agent, auth, Vercel/Render/Atlas configs, DEPLOYMENT.md) (DONE)
 
 ## Completed work log
+- 2026-10-17 13:40: Completed Phase 7: Made backend cloud-ready (dynamic PORT, Gunicorn 1 worker / 4 threads, opencv-python-headless in requirements-prod.txt, CPU PyTorch, frame resize to 640px, MODEL_URL auto-download, strict CORS_ORIGINS, uploads size & cleanup limits); created standalone camera agent (agent/camera_agent.py, agent/.env, scripts/run_agent.bat) with retry/backoff and POST /ingest-frame; implemented JWT authentication with 48-byte HMAC key, route protection with @require_auth, in-memory rate limiting, and safe path checks; upgraded React frontend with dynamic VITE_API_URL resolver, LoginModal, lock/logout action, cloud cold-start waking up banner, vercel.json SPA rewrite, and PWA service worker zero API caching; created backend/Dockerfile, .dockerignore, render.yaml blueprint, docker-compose.yml; authored comprehensive DEPLOYMENT.md; verified 37/37 pytest tests and Vite build succeed with zero errors. (Files: backend/config.py, backend/app.py, backend/sources.py, backend/inference/detect.py, backend/pipeline.py, agent/, dashboard/src/services/api.js, dashboard/src/App.jsx, dashboard/src/components/LoginModal.jsx, backend/Dockerfile, render.yaml, docker-compose.yml, DEPLOYMENT.md, README.md, PROGRESS.md)
 - 2026-10-17 13:01: Completed Phase 6: Authored comprehensive project README.md (team table, ASCII architecture diagram, quickstart, mobile WiFi setup, ESP32-CAM instructions, API table, testing commands, folder structure), created dataset/dataset.yaml and dataset/LABELING_GUIDE.md, built automated YOLOv8 transfer learning script train.py with automatic best.pt model deployment, registered pytest e2e markers, verified 26/26 unit tests and frontend production build pass cleanly. (Files: README.md, dataset/dataset.yaml, dataset/LABELING_GUIDE.md, train.py, pytest.ini, PROGRESS.md)
 - 2026-10-17 12:53: Completed Phase 5: Executed live end-to-end integration tests (backend port 5000 and frontend port 5173 running simultaneously), verified real-time YOLO inference, JPEG snapshots, asynchronous video upload and FFmpeg H.264 transcoding job, and verified responsive web delivery. (Files: backend/tests/test_e2e_live.py, PROGRESS.md)
 - 2026-10-17 12:46: Completed Phase 4: Initialized React Vite app, built custom responsive design system (dark/light themes, mobile-first bottom nav, desktop sidebar), implemented all 6 pages (Live Dashboard, Alerts Center, Analytics with Recharts, Video Upload Studio, Zones & Settings Editor, Demo Mode Toggle), set up PWA manifest and service worker, added Windows batch scripts (run_frontend.bat, run_all.bat, setup.bat), and confirmed zero-error production build. (Files: dashboard/, scripts/)

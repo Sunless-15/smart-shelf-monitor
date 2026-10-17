@@ -1,0 +1,63 @@
+services:
+  # ===========================================================================
+  # Render Web Service Blueprint for Smart Shelf Backend
+  # Free tier Docker container with gunicorn, CPU PyTorch, and YOLOv8
+  # ===========================================================================
+  - type: web
+    name: smart-shelf-backend
+    env: docker
+    region: oregon
+    plan: free
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      # Database: MongoDB Atlas connection string (e.g. mongodb+srv://<user>:<password>@cluster0.mongodb.net/?retryWrites=true&w=majority)
+      - key: MONGO_URI
+        sync: false
+
+      # Database name
+      - key: DB_NAME
+        value: shelf_monitor
+
+      # Dashboard Admin Password (used to unlock the web dashboard)
+      - key: DASHBOARD_PASSWORD
+        sync: false
+
+      # Secret key for signing dashboard JWT tokens (32+ characters)
+      - key: SECRET_KEY
+        generateValue: true
+
+      # Camera Agent API Key (must match agent/.env)
+      - key: AGENT_API_KEY
+        sync: false
+
+      # CORS Allowed Origins: Your deployed Vercel frontend URL
+      # e.g. https://smart-shelf-monitor.vercel.app
+      - key: CORS_ORIGINS
+        sync: false
+
+      # Model & Memory Settings
+      - key: MODEL_PATH
+        value: models/yolov8n.pt
+
+      - key: CONFIDENCE_THRESHOLD
+        value: "0.35"
+
+      - key: INFERENCE_MAX_WIDTH
+        value: "640"
+
+      # Video Source Mode: Defaults to "agent" (remote push) in cloud
+      - key: DEFAULT_SOURCE_TYPE
+        value: agent
+
+      - key: DEFAULT_SOURCE_VALUE
+        value: remote_push
+
+      # File and upload limits
+      - key: MAX_UPLOAD_MB
+        value: "50"
+
+      - key: FILE_CLEANUP_HOURS
+        value: "6"

@@ -25,11 +25,24 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+  const url = event.request.url;
   // Let API and video streams bypass cache directly
-  if (event.request.url.includes('/api') || 
-      event.request.url.includes('/live-') || 
-      event.request.url.includes('/outputs') ||
-      event.request.url.includes(':5000')) {
+  if (
+    event.request.method !== 'GET' ||
+    url.includes('/api') || 
+    url.includes('/live-') || 
+    url.includes('/outputs') ||
+    url.includes('/health') ||
+    url.includes('/shelf-status') ||
+    url.includes('/alerts') ||
+    url.includes('/zones') ||
+    url.includes('/history') ||
+    url.includes('/metrics') ||
+    url.includes('/login') ||
+    url.includes('/ingest-frame') ||
+    url.includes(':5000') ||
+    url.includes('onrender.com')
+  ) {
     return;
   }
 

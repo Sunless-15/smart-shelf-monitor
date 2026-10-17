@@ -1,23 +1,94 @@
 import axios from 'axios';
 
-// Defaults to the current hostname at port 5000 so mobile phones on the same WiFi work seamlessly
+// Resolve API base URL:
+// 1. Build-time environment variable VITE_API_URL (e.g. from Vercel)
+// 2. Or current browser hostname on port 5000 (for local dev / mobile WiFi)
+// 3. Fallback to localhost:5000
+const envUrl = (import.meta.env.VITE_API_URL || '').trim().replace(/\/$/, '');
+const isBrowser = typeof window !== 'undefined';
+const hostName = isBrowser ? window.location.hostname : '';
+
 export const API_BASE = 
-  import.meta.env.VITE_API_URL || 
-  (typeof window !== 'undefined' && window.location.hostname 
-    ? `http://${window.location.hostname}:5000` 
-    : 'http://localhost:5000');
+  envUrl || 
+  (isBrowser && hostName && hostName !== 'localhost' && !hostName.includes('127.0.0.1') && !hostName.includes('vercel.app')
+    ? `http://${hostName}:5000`
+    : (isBrowser && hostName.includes('vercel.app') ? '' : 'http://localhost:5000'));
+
+// Token Management
+export const getAuthToken = () => {
+  if (typeof window !== 'undefined') {
+    return localStorage.getItem('smart_shelf_token') || '';
+  }
+  return '';
+};
+
+export const setAuthToken = (token) => {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('smart_shelf_token', token);
+  }
+};
+
+export const clearAuthToken = () => {
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem('smart_shelf_token');
+  }
+};
 
 export const apiClient = axios.create({
   baseURL: API_BASE,
   timeout: 30000,
 });
 
-// Stream & Media URLs
-export const getLiveStreamUrl = () => `${API_BASE}/live-stream`;
-export const getLiveFrameUrl = () => `${API_BASE}/live-frame?t=${Date.now()}`;
-export const getOutputVideoUrl = (filename) => `${API_BASE}/outputs/${filename}`;
+// Attach JWT Bearer token to all requests if present
+apiClient.interceptors.request.use((config) => {
+  const token = getAuthToken();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// Response interceptor to detect 401s
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('auth_required'));
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
+// Stream & Media URLs with token parameter
+export const getLiveStreamUrl = () => {
+  const token = getAuthToken();
+  const sep = token ? `?token=${encodeURIComponent(token)}` : '';
+  return `${API_BASE}/live-stream${sep}`;
+};
+
+export const getLiveFrameUrl = () => {
+  const token = getAuthToken();
+  const sep = token ? `&token=${encodeURIComponent(token)}` : '';
+  return `${API_BASE}/live-frame?t=${Date.now()}${sep}`;
+};
+
+export const getOutputVideoUrl = (filename) => {
+  const token = getAuthToken();
+  const sep = token ? `?token=${encodeURIComponent(token)}` : '';
+  return `${API_BASE}/outputs/${filename}${sep}`;
+};
 
 // API Methods
+export const login = async (password) => {
+  const res = await apiClient.post('/login', { password });
+  if (res.data && res.data.token) {
+    setAuthToken(res.data.token);
+  }
+  return res.data;
+};
+
 export const getHealth = async () => {
   const res = await apiClient.get('/health');
   return res.data;

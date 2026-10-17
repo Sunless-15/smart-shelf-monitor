@@ -1,0 +1,49 @@
+version: '3.8'
+
+# =============================================================================
+# Docker Compose for Smart Shelf Monitor
+# Runs backend + local MongoDB container together for production-like testing
+# =============================================================================
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: smart_shelf_backend
+    ports:
+      - "5000:5000"
+    environment:
+      - PORT=5000
+      - HOST=0.0.0.0
+      - MONGO_URI=mongodb://mongo:27017
+      - DB_NAME=shelf_monitor
+      - DASHBOARD_PASSWORD=admin123
+      - SECRET_KEY=smart_shelf_secret_jwt_key_2026_super_secure_32b
+      - AGENT_API_KEY=shelf_agent_secret_key_2026
+      - CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+      - DEFAULT_SOURCE_TYPE=video
+      - DEFAULT_SOURCE_VALUE=sample_data/sample_shelf.mp4
+      - MAX_UPLOAD_MB=50
+      - FILE_CLEANUP_HOURS=6
+      - INFERENCE_MAX_WIDTH=640
+      - CONFIDENCE_THRESHOLD=0.35
+    depends_on:
+      - mongo
+    volumes:
+      - ./backend/data:/app/data
+      - ./backend/uploads:/app/uploads
+      - ./backend/outputs:/app/outputs
+    restart: unless-stopped
+
+  mongo:
+    image: mongo:6.0
+    container_name: smart_shelf_mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    restart: unless-stopped
+
+volumes:
+  mongodb_data:

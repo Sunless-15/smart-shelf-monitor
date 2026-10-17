@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
 import BottomNav from './components/BottomNav';
 import Header from './components/Header';
+import LoginModal from './components/LoginModal';
 import LiveDashboard from './pages/LiveDashboard';
 import AlertsView from './pages/AlertsView';
 import AnalyticsView from './pages/AnalyticsView';
@@ -12,9 +13,11 @@ import {
   getAlerts, 
   getHealth, 
   getSource, 
-  switchSource 
+  switchSource,
+  getAuthToken,
+  clearAuthToken
 } from './services/api';
-import { AlertCircle, AlertTriangle, X } from 'lucide-react';
+import { AlertCircle, AlertTriangle, X, CloudLightning } from 'lucide-react';
 
 export default function App() {
   const [currentTab, setCurrentTab] = useState('dashboard');
@@ -24,6 +27,8 @@ export default function App() {
   const [theme, setTheme] = useState('dark');
   const [toastAlert, setToastAlert] = useState(null);
   const [lastSeenAlertId, setLastSeenAlertId] = useState(null);
+  const [showLogin, setShowLogin] = useState(!getAuthToken());
+  const [serverWakingUp, setServerWakingUp] = useState(false);
 
   // Apply theme to document element
   useEffect(() => {
@@ -37,8 +42,19 @@ export default function App() {
     }
   }, []);
 
+  // Listen for 401 unauthorized events from API client
+  useEffect(() => {
+    const handleAuthRequired = () => {
+      setShowLogin(true);
+    };
+    window.addEventListener('auth_required', handleAuthRequired);
+    return () => window.removeEventListener('auth_required', handleAuthRequired);
+  }, []);
+
   // Poll system health and unacknowledged alerts count
   useEffect(() => {
+    let failureCount = 0;
+
     const checkStatus = async () => {
       try {
         const [health, alertsData, srcData] = await Promise.all([
@@ -48,6 +64,9 @@ export default function App() {
         ]);
 
         setIsOnline(true);
+        setServerWakingUp(false);
+        failureCount = 0;
+
         const unackAlerts = alertsData.alerts || [];
         setUnreadAlertsCount(unackAlerts.length);
 
@@ -77,6 +96,11 @@ export default function App() {
         }
       } catch (err) {
         setIsOnline(false);
+        failureCount += 1;
+        // If consecutive connection failures occur, hint at cloud cold-start
+        if (failureCount >= 2) {
+          setServerWakingUp(true);
+        }
       }
     };
 
@@ -103,6 +127,16 @@ export default function App() {
     setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
   };
 
+  const handleLogout = () => {
+    clearAuthToken();
+    setShowLogin(true);
+  };
+
+  const handleLoginSuccess = () => {
+    setShowLogin(false);
+    setIsOnline(true);
+  };
+
   const getPageInfo = () => {
     switch (currentTab) {
       case 'dashboard':
@@ -124,6 +158,34 @@ export default function App() {
 
   return (
     <div className="app-container">
+      {/* Cloud Cold Start Waking Up Banner */}
+      {serverWakingUp && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          background: 'linear-gradient(90deg, #1e3a8a, #3b82f6)',
+          color: '#fff',
+          padding: '0.5rem 1rem',
+          textAlign: 'center',
+          fontSize: '0.85rem',
+          fontWeight: 500,
+          zIndex: 100000,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '0.5rem',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
+        }}>
+          <CloudLightning size={16} className="animate-spin" />
+          <span>Connecting to cloud backend... Free-tier hosts (e.g. Render) take ~30-50s to wake up from idle. Auto-retrying...</span>
+        </div>
+      )}
+
+      {/* Login Authentication Modal */}
+      <LoginModal isOpen={showLogin} onSuccess={handleLoginSuccess} />
+
       {/* Desktop Navigation Sidebar */}
       <Sidebar
         currentTab={currentTab}
@@ -137,7 +199,7 @@ export default function App() {
       />
 
       {/* Main App Content Viewport */}
-      <main className="main-content">
+      <main className="main-content" style={{ marginTop: serverWakingUp ? '2rem' : 0 }}>
         <Header
           title={pageInfo.title}
           subtitle={pageInfo.subtitle}
@@ -146,6 +208,7 @@ export default function App() {
           onToggleDemoMode={handleToggleDemoMode}
           theme={theme}
           onToggleTheme={handleToggleTheme}
+          onLogout={handleLogout}
         />
 
         {/* Tab Switching Body */}

@@ -19,14 +19,48 @@ Built for **Project Phase I, Department of Computer Science & Engineering, St. T
 
 ---
 
+## 🌐 Live Cloud Deployment Guide
+> 📖 **Deploying to the public internet?** Follow the complete, beginner-friendly step-by-step guide in [DEPLOYMENT.md](file:///d:/project/smart%20shelf/DEPLOYMENT.md) to launch the Frontend on **Vercel**, the Backend on **Render (Docker)**, Database on **MongoDB Atlas**, and stream local video via the **Camera Agent** for 100% free!
+
+---
+
 ## 🏛️ System Architecture
 
+### 1. Public Cloud Architecture (Vercel + Render + Atlas + Camera Agent)
+```
+ ┌────────────────────────┐
+ │   Local Hardware (PC)  │
+ │  • Laptop Webcam /     │
+ │    ESP32-CAM stream    │
+ │  • camera_agent.py     │
+ └───────────┬────────────┘
+             │ (POST /ingest-frame with X-API-Key)
+             ▼
+ ┌────────────────────────────────────────────────────────┐
+ │         Render Web Service (Docker Container)          │
+ │  • Gunicorn (1 worker, 4 threads)                      │
+ │  • YOLOv8 Inference (CPU PyTorch, max 640px)           │
+ │  • Zone Evaluation, Predictions, Alert Engine          │
+ │  • REST API & Admin Authentication (/login)            │
+ └───────────┬────────────────────────────────┬───────────┘
+             │                                │
+             ▼                                ▼
+ ┌───────────────────────┐        ┌───────────────────────┐
+ │   MongoDB Atlas (M0)  │        │     Vercel (PWA)      │
+ │  • zones, alerts,     │        │  • React (Vite) App   │
+ │    history, jobs      │        │  • Mobile Bottom Nav  │
+ └───────────────────────┘        │  • Admin Login Screen │
+                                  └───────────────────────┘
+```
+
+### 2. Local Architecture (Stand-alone PC)
 ```
                        ┌────────────────────────────────────────────────────────┐
                        │               Pluggable Video Source Layer             │
                        │   1. Laptop Webcam (cv2.VideoCapture(0))               │
                        │   2. Looped Video File (sample_shelf.mp4)              │
                        │   3. ESP32-CAM HTTP/MJPEG Stream (http://<ip>:81/stream)│
+                       │   4. Remote Camera Agent (POST /ingest-frame)          │
                        └──────────────────────────┬─────────────────────────────┘
                                                   │
                                                   ▼
@@ -38,6 +72,7 @@ Built for **Project Phase I, Department of Computer Science & Engineering, St. T
                  │ • Shortage Predictor (Linear Regression: Time-to-Empty / Low)    │
                  │ • Alert Engine with Cooldown Deduplication                       │
                  │ • Background Video Job Worker (FFmpeg H.264 Transcoder)          │
+                 │ • JWT Dashboard Authentication & Rate Limiting                   │
                  └────────────────┬────────────────────────────────┬────────────────┘
                                   │                                │
                                   ▼                                ▼
@@ -53,8 +88,8 @@ Built for **Project Phase I, Department of Computer Science & Engineering, St. T
 ```
 
 > **Key Architectural Decisions:**
-> 1. **No Raspberry Pi**: All computer vision processing (YOLOv8 inference, stock logic, API, database) runs on the host PC.
-> 2. **Pluggable Video Layer**: The ESP32-CAM hardware is not required for development. The system features a pluggable source abstraction supporting laptop webcams, looped disk videos, and HTTP streams with zero code changes.
+> 1. **No Raspberry Pi**: All computer vision processing (YOLOv8 inference, stock logic, API, database) runs on the host PC or cloud container.
+> 2. **Pluggable Video & Camera Agent**: Supports laptop webcams, looped disk videos, HTTP streams, and push ingest from remote camera agents with zero code changes.
 > 3. **MongoDB Resilience**: If local MongoDB is unavailable or stopped, the backend automatically fails over to an in-memory/JSON store (`data/fallback_store.json`), allowing offline execution without crashing.
 
 ---
@@ -131,12 +166,51 @@ When your ESP32-CAM module is powered on and connected to WiFi:
 1. Note its IP address from the Serial Monitor (e.g., `192.168.1.100`).
 2. Open the **Zones & Sources** tab on the web dashboard.
 3. Select **ESP32-CAM Stream**, paste `http://192.168.1.100:81/stream`, and click **Apply Video Source**.
-4. *Alternatively*, update [`backend/.env`](file:///d:/project/smart%20shelf/backend/.env):
+4. *Alternatively*, update [`backend/.env`](file:///d:/project/smart%20shelf/backend/.env) (or `agent/.env` if using the Camera Agent):
    ```ini
-   DEFAULT_SOURCE_TYPE=stream
-   DEFAULT_SOURCE_VALUE=http://192.168.1.100:81/stream
+   SOURCE_TYPE=stream
+   SOURCE_VALUE=http://192.168.1.100:81/stream
    ```
 *No code modifications or recompilations are needed.*
+
+---
+
+## 📹 Running the Standalone Camera Agent (for Cloud Deployment)
+
+When deploying the backend to the cloud (Render), the backend cannot access your local USB camera or home Wi-Fi ESP32-CAM. The **Camera Agent** runs on your PC next to the camera, captures frames, compresses them, and pushes them to your cloud backend via `POST /ingest-frame`:
+
+1. Configure [`agent/.env`](file:///d:/project/smart%20shelf/agent/.env):
+   ```ini
+   BACKEND_URL=https://your-backend.onrender.com
+   AGENT_API_KEY=shelf_agent_secret_key_2026
+   SOURCE_TYPE=video
+   SOURCE_VALUE=../backend/sample_data/sample_shelf.mp4
+   INTERVAL_SECONDS=1.5
+   ```
+2. Launch the agent:
+   ```cmd
+   scripts\run_agent.bat
+   ```
+3. The live feed, inventory counts, and anomaly alerts will instantly appear on your public Vercel web app!
+
+---
+
+## ⚡ Alternative: Exposing PC-Hosted Backend via Cloudflare Tunnel
+
+If you prefer to run the YOLOv8 model directly on your PC's CPU/GPU (for higher FPS than Render's free tier) while still having a public HTTPS URL:
+
+1. Install Cloudflare Tunnel on Windows:
+   ```powershell
+   winget install --id Cloudflare.cloudflared
+   ```
+2. Start the local backend (`scripts\run_backend.bat`).
+3. In a new PowerShell window, expose port 5000:
+   ```powershell
+   cloudflared tunnel --url http://localhost:5000
+   ```
+4. Copy the temporary HTTPS URL provided by Cloudflare (e.g. `https://xxxx.trycloudflare.com`).
+5. In your Vercel project settings, set `VITE_API_URL` to that Cloudflare URL.
+> **Tradeoff:** Fast native PC performance, but only works while your PC is awake and connected to the internet.
 
 ---
 

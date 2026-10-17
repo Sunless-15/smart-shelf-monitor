@@ -436,6 +436,63 @@ class SyntheticShelfSource(BaseVideoSource):
         return self.is_active
 
 
+class AgentSource(BaseVideoSource):
+    """Video source receiving frames pushed from a remote camera agent via POST /ingest-frame."""
+
+    def __init__(self):
+        super().__init__(source_type="agent", source_value="remote_push")
+        self.is_active = True
+        self.fps = 1.0
+        self.width = 640
+        self.height = 480
+        self.last_pushed_time = 0.0
+        self.camera_id = "default"
+        self._lock = threading.Lock()
+
+    def push_frame(self, frame: np.ndarray, camera_id: str = "default"):
+        with self._lock:
+            self.last_frame = frame
+            self.camera_id = camera_id
+            self.last_pushed_time = time.time()
+            self.frame_count += 1
+            h, w = frame.shape[:2]
+            self.width = w
+            self.height = h
+            self.is_active = True
+            self.error_message = None
+
+    def read(self) -> Tuple[bool, Optional[np.ndarray]]:
+        with self._lock:
+            if self.last_frame is None:
+                # Placeholder frame waiting for agent
+                ph = np.zeros((self.height, self.width, 3), dtype=np.uint8)
+                cv2.putText(ph, "WAITING FOR CAMERA AGENT...", (60, 240), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 200, 255), 2)
+                cv2.putText(ph, "POST /ingest-frame with X-API-Key", (90, 280), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (160, 160, 160), 1)
+                return True, ph
+
+            # Check if frame is stale (> 30s)
+            elapsed = time.time() - self.last_pushed_time
+            if elapsed > 30.0:
+                frame_copy = self.last_frame.copy()
+                cv2.putText(frame_copy, f"STALE FEED ({int(elapsed)}s AGO)", (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
+                return True, frame_copy
+
+            return True, self.last_frame.copy()
+
+    def release(self):
+        self.is_active = False
+
+    def is_opened(self) -> bool:
+        return self.is_active
+
+    def get_status(self) -> Dict[str, Any]:
+        with self._lock:
+            status = super().get_status()
+            status["camera_id"] = self.camera_id
+            status["last_pushed_ago_sec"] = round(time.time() - self.last_pushed_time, 1) if self.last_pushed_time > 0 else None
+            return status
+
+
 class VideoSourceManager:
     """Thread-safe singleton managing the active video source."""
 
@@ -463,7 +520,9 @@ class VideoSourceManager:
             source_type = str(source_type).lower().strip()
             
             try:
-                if source_type == "webcam":
+                if source_type == "agent":
+                    source = AgentSource()
+                elif source_type == "webcam":
                     source = WebcamSource(device_index=source_value)
                 elif source_type == "video":
                     source = VideoFileSource(file_path=str(source_value))
@@ -472,7 +531,7 @@ class VideoSourceManager:
                 elif source_type == "synthetic":
                     source = SyntheticShelfSource()
                 else:
-                    return False, f"Unknown source type: {source_type}. Valid options: webcam, video, stream."
+                    return False, f"Unknown source type: {source_type}. Valid options: agent, webcam, video, stream."
 
                 if not source.is_opened():
                     # Fallback to synthetic if requested source fails
@@ -488,6 +547,23 @@ class VideoSourceManager:
                 logger.error(f"Error initializing source {source_type}: {e}")
                 self.current_source = SyntheticShelfSource()
                 return False, f"Exception creating source: {e}"
+
+    def push_agent_frame(self, frame: np.ndarray, camera_id: str = "default") -> bool:
+        """Push a frame from an external camera agent."""
+        with self._lock:
+            if not isinstance(self.current_source, AgentSource):
+                # Auto-switch to AgentSource when receiving agent frames
+                logger.info(f"Auto-switching active video source to 'agent' upon receiving ingest frame from camera '{camera_id}'")
+                agent_src = AgentSource()
+                if self.current_source:
+                    try:
+                        self.current_source.release()
+                    except Exception:
+                        pass
+                self.current_source = agent_src
+
+            self.current_source.push_frame(frame, camera_id)
+            return True
 
     def get_frame(self) -> Tuple[bool, Optional[np.ndarray]]:
         """Fetch next frame from current active source."""

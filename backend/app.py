@@ -18,6 +18,10 @@ from sources import source_manager
 from pipeline import pipeline
 from video_jobs import job_manager
 
+import jwt
+import threading
+from functools import wraps
+
 # Setup logging
 logging.basicConfig(
     level=logging.INFO,
@@ -26,13 +30,164 @@ logging.basicConfig(
 logger = logging.getLogger("smart_shelf_backend")
 
 app = Flask(__name__)
-# Enable CORS for all routes and origins (allowing Vite dev server and mobile clients)
-CORS(app, resources={r"/*": {"origins": "*"}})
+# Enable CORS for configured origins (supporting Vercel production domains and local dev)
+CORS(app, resources={r"/*": {"origins": Config.CORS_ORIGINS}}, supports_credentials=True)
+
+# Clean up old upload/output files on startup
+Config.cleanup_old_files()
 
 # Start live monitoring pipeline in background
 pipeline.start()
 
 START_TIME = time.time()
+
+
+class SimpleRateLimiter:
+    """Thread-safe in-memory rate limiter per IP/key."""
+    def __init__(self):
+        self._records = {}
+        self._lock = threading.Lock()
+
+    def is_allowed(self, key: str, max_requests: int, window_seconds: float) -> bool:
+        now = time.time()
+        with self._lock:
+            timestamps = self._records.get(key, [])
+            timestamps = [t for t in timestamps if now - t < window_seconds]
+            if len(timestamps) >= max_requests:
+                self._records[key] = timestamps
+                return False
+            timestamps.append(now)
+            self._records[key] = timestamps
+            return True
+
+
+rate_limiter = SimpleRateLimiter()
+
+
+def require_auth(f):
+    """Decorator to require JWT authentication header or token query parameter."""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        # Allow disabling auth explicitly via environment for headless/internal tests if specified
+        if os.getenv("DISABLE_AUTH", "false").lower() in ("true", "1", "yes"):
+            return f(*args, **kwargs)
+
+        token = None
+        auth_header = request.headers.get("Authorization", "")
+        if auth_header.startswith("Bearer "):
+            token = auth_header[7:].strip()
+        elif "token" in request.args:
+            token = request.args.get("token")
+
+        if not token:
+            return jsonify({
+                "error": "Unauthorized",
+                "message": "Authentication token required. Please login."
+            }), 401
+
+        try:
+            payload = jwt.decode(token, Config.SECRET_KEY, algorithms=["HS256"])
+            request.user = payload
+        except jwt.ExpiredSignatureError:
+            return jsonify({
+                "error": "Unauthorized",
+                "message": "Token has expired. Please login again."
+            }), 401
+        except Exception as e:
+            return jsonify({
+                "error": "Unauthorized",
+                "message": f"Invalid authentication token: {e}"
+            }), 401
+
+        return f(*args, **kwargs)
+    return decorated
+
+
+@app.route("/login", methods=["POST"])
+def login():
+    """Authenticate dashboard administrator and return signed JWT."""
+    client_ip = request.remote_addr or "127.0.0.1"
+    if not rate_limiter.is_allowed(f"login_{client_ip}", max_requests=10, window_seconds=60):
+        return jsonify({
+            "error": "Too Many Requests",
+            "message": "Too many failed login attempts. Please wait 1 minute."
+        }), 429
+
+    data = request.get_json(force=True, silent=True) or {}
+    password = data.get("password", "")
+
+    if not password:
+        return jsonify({"error": "Bad Request", "message": "Password is required"}), 400
+
+    if password != Config.DASHBOARD_PASSWORD:
+        return jsonify({"error": "Unauthorized", "message": "Invalid dashboard password"}), 401
+
+    token = jwt.encode(
+        {
+            "user": "admin",
+            "iat": time.time(),
+            "exp": time.time() + (30 * 86400)  # 30 days valid
+        },
+        Config.SECRET_KEY,
+        algorithm="HS256"
+    )
+    return jsonify({
+        "status": "ok",
+        "token": token,
+        "expires_in": 30 * 86400
+    }), 200
+
+
+@app.route("/ingest-frame", methods=["POST"])
+def ingest_frame():
+    """Ingest camera frame from remote camera agent."""
+    api_key = request.headers.get("X-API-Key")
+    if not api_key or api_key != Config.AGENT_API_KEY:
+        return jsonify({"error": "Unauthorized", "message": "Invalid X-API-Key"}), 401
+
+    client_ip = request.remote_addr or "127.0.0.1"
+    if not rate_limiter.is_allowed(f"ingest_{client_ip}", max_requests=120, window_seconds=60):
+        return jsonify({"error": "Too Many Requests", "message": "Rate limit exceeded"}), 429
+
+    # Max 5MB payload
+    if request.content_length and request.content_length > 5 * 1024 * 1024:
+        return jsonify({"error": "Payload Too Large", "message": "Frame exceeds 5MB limit"}), 413
+
+    camera_id = request.headers.get("X-Camera-ID") or request.args.get("camera_id") or "camera_1"
+
+    frame_bytes = None
+    if "frame" in request.files:
+        frame_bytes = request.files["frame"].read()
+    elif "image" in request.files:
+        frame_bytes = request.files["image"].read()
+    else:
+        frame_bytes = request.get_data()
+
+    if not frame_bytes:
+        return jsonify({"error": "Bad Request", "message": "No frame data received"}), 400
+
+    import cv2
+    import numpy as np
+    nparr = np.frombuffer(frame_bytes, np.uint8)
+    frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+    if frame is None or frame.size == 0:
+        return jsonify({"error": "Bad Request", "message": "Could not decode JPEG frame"}), 400
+
+    # Push to source manager (sets AgentSource and updates latest buffer)
+    source_manager.push_agent_frame(frame, camera_id=camera_id)
+
+    # Immediately run pipeline step on this frame so stats/alerts are instantly live
+    evaluation = pipeline.process_single_frame(frame)
+
+    return jsonify({
+        "status": "ok",
+        "camera_id": camera_id,
+        "width": frame.shape[1],
+        "height": frame.shape[0],
+        "detections": len(evaluation.get("detections", [])),
+        "total_items": evaluation.get("total_items", 0),
+        "zones_evaluated": len(evaluation.get("zones", []))
+    }), 200
 
 
 @app.route("/health", methods=["GET"])
@@ -57,18 +212,20 @@ def health():
 
 
 @app.route("/source", methods=["GET"])
+@require_auth
 def get_source():
     """Return the currently active video source and its health status."""
     return jsonify(source_manager.get_status()), 200
 
 
 @app.route("/source", methods=["POST"])
+@require_auth
 def switch_source():
     """Switch the video source dynamically at runtime.
 
     Request JSON payload:
     {
-        "type": "webcam" | "video" | "stream" | "synthetic",
+        "type": "agent" | "webcam" | "video" | "stream" | "synthetic",
         "value": 0 | "sample_data/sample_shelf.mp4" | "http://<ip>:81/stream"
     }
     """
@@ -79,7 +236,7 @@ def switch_source():
     if not source_type:
         return jsonify({
             "success": False,
-            "message": "Missing 'type' parameter. Must be 'webcam', 'video', or 'stream'."
+            "message": "Missing 'type' parameter. Must be 'agent', 'webcam', 'video', or 'stream'."
         }), 400
 
     # Sensible defaults if value is omitted
@@ -90,6 +247,8 @@ def switch_source():
             source_value = str(Config.SAMPLE_DATA_DIR / "sample_shelf.mp4")
         elif source_type in ("stream", "esp32"):
             source_value = "http://192.168.1.100:81/stream"
+        elif source_type == "agent":
+            source_value = "remote_push"
         elif source_type == "synthetic":
             source_value = "synthetic"
 
@@ -104,6 +263,7 @@ def switch_source():
 
 
 @app.route("/live-frame", methods=["GET"])
+@require_auth
 def get_live_frame():
     """Return a single JPEG snapshot from the active video source."""
     # Read fresh frame or latest buffered frame
@@ -119,6 +279,7 @@ def get_live_frame():
 
 
 @app.route("/shelf-status", methods=["GET"])
+@require_auth
 def get_shelf_status():
     """Return the latest evaluated shelf status, counts, percentages, and shortage predictions."""
     status_data = pipeline.get_status()
@@ -146,6 +307,7 @@ def get_shelf_status():
 
 
 @app.route("/live-stream", methods=["GET"])
+@require_auth
 def live_stream():
     """Stream continuous MJPEG feed of annotated frames for HTML <img> tags."""
     def generate_mjpeg():
@@ -173,6 +335,7 @@ def live_stream():
 # -----------------------------------------------------------------------------
 
 @app.route("/alerts", methods=["GET"])
+@require_auth
 def get_alerts():
     """List recorded alerts with optional unacknowledged filter."""
     unack_only = request.args.get("unacknowledged", "").lower() in ("true", "1")
@@ -187,6 +350,7 @@ def get_alerts():
 
 
 @app.route("/alerts/<alert_id>/ack", methods=["POST"])
+@require_auth
 def acknowledge_alert(alert_id):
     """Mark an alert as acknowledged."""
     res = db.alerts.update_one(
@@ -205,6 +369,7 @@ def acknowledge_alert(alert_id):
 # -----------------------------------------------------------------------------
 
 @app.route("/zones", methods=["GET"])
+@require_auth
 def get_zones():
     """Retrieve all defined shelf zones."""
     zones = list(db.zones.find({}))
@@ -212,6 +377,7 @@ def get_zones():
 
 
 @app.route("/zones", methods=["POST"])
+@require_auth
 def create_zone():
     """Create a new shelf zone definition.
 
@@ -253,11 +419,11 @@ def create_zone():
 
 
 @app.route("/zones/<zone_id>", methods=["PUT"])
+@require_auth
 def update_zone(zone_id):
-    """Update an existing shelf zone."""
+    """Update a shelf zone's configuration."""
     data = request.get_json(force=True, silent=True) or {}
     update_fields = {}
-
     if "name" in data:
         update_fields["name"] = str(data["name"]).strip()
     if "expected_class" in data:
@@ -285,6 +451,7 @@ def update_zone(zone_id):
 
 
 @app.route("/zones/<zone_id>", methods=["DELETE"])
+@require_auth
 def delete_zone(zone_id):
     """Delete a shelf zone."""
     res = db.zones.delete_one(id_filter(zone_id))
@@ -299,13 +466,14 @@ def delete_zone(zone_id):
 # -----------------------------------------------------------------------------
 
 @app.route("/history", methods=["GET"])
+@require_auth
 def get_history():
     """Return historical stock percentages and counts for Recharts."""
     zone_id = request.args.get("zone")
     hours = float(request.args.get("hours", 24))
     since_ts = time.time() - (hours * 3600)
 
-    filter_dict: Dict[str, Any] = {"timestamp": {"$gte": since_ts}}
+    filter_dict = {"timestamp": {"$gte": since_ts}}
     if zone_id:
         filter_dict["zone_id"] = zone_id
 
@@ -333,15 +501,33 @@ def allowed_file(filename: str) -> bool:
 
 
 @app.route("/upload-video", methods=["POST"])
+@require_auth
 def upload_video():
     """Upload a video file for asynchronous sampling, detection, and annotation."""
+    client_ip = request.remote_addr or "127.0.0.1"
+    if not rate_limiter.is_allowed(f"upload_{client_ip}", max_requests=20, window_seconds=60):
+        return jsonify({
+            "error": "Too Many Requests",
+            "message": "Upload rate limit exceeded. Please wait a minute."
+        }), 429
+
+    Config.cleanup_old_files()
+
+    max_bytes = Config.MAX_UPLOAD_MB * 1024 * 1024
+    if request.content_length and request.content_length > max_bytes:
+        return jsonify({
+            "error": "Payload Too Large",
+            "message": f"File size exceeds maximum upload limit of {Config.MAX_UPLOAD_MB}MB."
+        }), 413
+
     file = request.files.get("video") or request.files.get("file")
     if not file or file.filename == "":
-        return jsonify({"error": "No video file provided"}), 400
+        return jsonify({"error": "Bad Request", "message": "No video file provided"}), 400
 
     if not allowed_file(file.filename):
         return jsonify({
-            "error": f"Invalid video file format. Supported: {', '.join(ALLOWED_VIDEO_EXTENSIONS)}"
+            "error": "Bad Request",
+            "message": f"Invalid video file format. Supported: {', '.join(ALLOWED_VIDEO_EXTENSIONS)}"
         }), 400
 
     filename = secure_filename(file.filename)
@@ -349,6 +535,17 @@ def upload_video():
     save_filename = f"{unique_prefix}_{filename}"
     save_path = Config.UPLOADS_DIR / save_filename
     file.save(str(save_path))
+
+    # Verify actual saved file size
+    if save_path.stat().st_size > max_bytes:
+        try:
+            save_path.unlink()
+        except Exception:
+            pass
+        return jsonify({
+            "error": "Payload Too Large",
+            "message": f"File size exceeds maximum upload limit of {Config.MAX_UPLOAD_MB}MB."
+        }), 413
 
     # Register and trigger job
     job_id = job_manager.create_job(filename=filename, filepath=str(save_path))
@@ -364,6 +561,7 @@ def upload_video():
 
 
 @app.route("/job-status/<job_id>", methods=["GET"])
+@require_auth
 def get_job_status(job_id):
     """Check processing status and completion percentage of an uploaded video job."""
     job = db.jobs.find_one(id_filter(job_id))
@@ -382,6 +580,7 @@ def get_job_status(job_id):
 
 
 @app.route("/job-result/<job_id>", methods=["GET"])
+@require_auth
 def get_job_result(job_id):
     """Retrieve the summary metrics, event timeline, and annotated video URL for a completed job."""
     job = db.jobs.find_one(id_filter(job_id))
@@ -406,9 +605,17 @@ def get_job_result(job_id):
 
 
 @app.route("/outputs/<path:filename>", methods=["GET"])
+@require_auth
 def get_output_file(filename):
-    """Serve annotated video files and reports."""
-    return send_from_directory(Config.OUTPUTS_DIR, filename)
+    """Serve annotated video files and reports securely."""
+    clean_filename = secure_filename(os.path.basename(filename))
+    base_dir = Config.OUTPUTS_DIR.resolve()
+    target_path = (base_dir / clean_filename).resolve()
+
+    if not str(target_path).startswith(str(base_dir)) or not target_path.exists():
+        return jsonify({"error": "File not found or access denied"}), 404
+
+    return send_from_directory(str(base_dir), clean_filename)
 
 
 # -----------------------------------------------------------------------------
@@ -416,6 +623,7 @@ def get_output_file(filename):
 # -----------------------------------------------------------------------------
 
 @app.route("/metrics", methods=["GET"])
+@require_auth
 def get_metrics():
     """Return performance and monitoring metrics."""
     uptime = round(time.time() - START_TIME, 1)

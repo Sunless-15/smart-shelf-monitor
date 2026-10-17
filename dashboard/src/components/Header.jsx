@@ -9,7 +9,8 @@ export default function Header({
   onToggleDemoMode, 
   onRefresh, 
   theme, 
-  onToggleTheme 
+  onToggleTheme,
+  onLogout
 }) {
   return (
     <header className="page-header">
@@ -49,6 +50,17 @@ export default function Header({
         >
           {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
         </button>
+
+        {onLogout && (
+          <button 
+            onClick={onLogout} 
+            className="btn btn-secondary"
+            style={{ minHeight: '36px', padding: '0.35rem 0.65rem', color: 'var(--text-muted)' }}
+            title="Lock / Logout from dashboard"
+          >
+            Lock
+          </button>
+        )}
 
         <div 
           className={`badge ${isOnline ? 'badge-ok' : 'badge-empty'}`}

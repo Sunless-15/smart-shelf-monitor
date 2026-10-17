@@ -1,5 +1,6 @@
 # Core
 python-dotenv==1.0.1
+pyjwt==2.15.1
 
 # Computer Vision / ML
 ultralytics==8.3.0

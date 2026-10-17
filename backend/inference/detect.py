@@ -37,6 +37,21 @@ class YOLODetector:
                 p = Config.BACKEND_DIR / self.model_path
 
             if not p.exists():
+                if Config.MODEL_URL:
+                    try:
+                        logger.info(f"Downloading model weights from MODEL_URL: {Config.MODEL_URL}...")
+                        import requests
+                        p.parent.mkdir(parents=True, exist_ok=True)
+                        resp = requests.get(Config.MODEL_URL, stream=True, timeout=60)
+                        if resp.status_code == 200:
+                            with open(p, "wb") as f:
+                                for chunk in resp.iter_content(chunk_size=8192):
+                                    f.write(chunk)
+                            logger.info(f"Model weights downloaded successfully to {p}")
+                    except Exception as err:
+                        logger.warning(f"Could not download model from MODEL_URL: {err}")
+
+            if not p.exists():
                 fallback_pt = Config.MODELS_DIR / "yolov8n.pt"
                 if fallback_pt.exists():
                     p = fallback_pt
@@ -83,12 +98,24 @@ class YOLODetector:
         if h == 0 or w == 0:
             return [], 0.0
 
+        # Memory optimization: resize large frames to max width before inference
+        max_w = Config.INFERENCE_MAX_WIDTH
+        if w > max_w:
+            scale = max_w / float(w)
+            inf_w = max_w
+            inf_h = max(1, int(h * scale))
+            import cv2
+            inf_frame = cv2.resize(frame, (inf_w, inf_h), interpolation=cv2.INTER_AREA)
+        else:
+            inf_frame = frame
+            inf_w, inf_h = w, h
+
         start_time = time.perf_counter()
         
         with self._lock:
             try:
                 results = self.model.predict(
-                    source=frame,
+                    source=inf_frame,
                     conf=threshold,
                     verbose=False,
                     device="cpu"
@@ -116,24 +143,30 @@ class YOLODetector:
             class_name = result.names.get(class_id, str(class_id))
 
             px1, py1, px2, py2 = xyxy
-            # Clamp to frame dimensions
-            px1 = max(0.0, min(float(px1), float(w)))
-            py1 = max(0.0, min(float(py1), float(h)))
-            px2 = max(0.0, min(float(px2), float(w)))
-            py2 = max(0.0, min(float(py2), float(h)))
+            # Clamp to inference frame dimensions
+            px1 = max(0.0, min(float(px1), float(inf_w)))
+            py1 = max(0.0, min(float(py1), float(inf_h)))
+            px2 = max(0.0, min(float(px2), float(inf_w)))
+            py2 = max(0.0, min(float(py2), float(inf_h)))
 
             # Normalized coordinates (0.0 - 1.0)
-            nx1 = round(px1 / w, 4)
-            ny1 = round(py1 / h, 4)
-            nx2 = round(px2 / w, 4)
-            ny2 = round(py2 / h, 4)
+            nx1 = round(px1 / inf_w, 4)
+            ny1 = round(py1 / inf_h, 4)
+            nx2 = round(px2 / inf_w, 4)
+            ny2 = round(py2 / inf_h, 4)
 
             cx = round((nx1 + nx2) / 2.0, 4)
             cy = round((ny1 + ny2) / 2.0, 4)
 
+            # Map pixel coordinates back to original frame dimensions
+            orig_px1 = int(nx1 * w)
+            orig_py1 = int(ny1 * h)
+            orig_px2 = int(nx2 * w)
+            orig_py2 = int(ny2 * h)
+
             detections.append({
                 "box": [nx1, ny1, nx2, ny2],
-                "pixel_box": [int(px1), int(py1), int(px2), int(py2)],
+                "pixel_box": [orig_px1, orig_py1, orig_px2, orig_py2],
                 "center": [cx, cy],
                 "confidence": round(confidence, 3),
                 "class_id": class_id,

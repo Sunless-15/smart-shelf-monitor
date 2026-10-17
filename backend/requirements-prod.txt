@@ -1,0 +1,19 @@
+# Production Requirements for Cloud Container Deployment (Render, Hugging Face, Railway)
+# Uses opencv-python-headless (no X11/GUI) and gunicorn production server
+
+python-dotenv==1.0.1
+pyjwt==2.15.1
+
+# Computer Vision / ML
+ultralytics==8.3.0
+opencv-python-headless==4.10.0.84
+numpy==1.26.4
+
+# Backend / API / Production WSGI Server
+flask==3.0.3
+flask-cors==4.0.1
+pymongo==4.8.0
+gunicorn==22.0.0
+
+# Utilities
+requests==2.32.3

@@ -261,6 +261,55 @@ class MonitoringPipeline:
         except Exception as e:
             logger.error(f"Failed to save history snapshot: {e}")
 
+    def process_single_frame(self, frame: np.ndarray) -> Dict[str, Any]:
+        """Directly process an incoming frame (e.g. from /ingest-frame)."""
+        if frame is None or frame.size == 0:
+            return {}
+
+        detections, latency = detector.detect(frame)
+        raw_zones = list(db.zones.find({}))
+        zones = serialize_docs(raw_zones)
+        zone_evals = analyze_shelf_zones(zones, detections)
+
+        now = time.time()
+        for z in zone_evals:
+            zone_id = z["zone_id"]
+            three_hours_ago = now - (3 * 3600)
+            history_records = list(
+                db.history.find(
+                    {"zone_id": zone_id, "timestamp": {"$gte": three_hours_ago}},
+                    sort=[("timestamp", 1)],
+                    limit=100
+                )
+            )
+            z["prediction"] = calculate_depletion_forecast(
+                history_points=history_records,
+                current_stock_percent=z["stock_percent"],
+                low_threshold=z["low_threshold"]
+            )
+
+        annotated = annotate_frame(frame, zone_evals, detections)
+        self._handle_alerts(zone_evals, now)
+
+        if now - self.last_history_save >= self.history_interval_seconds:
+            self._save_history_snapshot(zone_evals, now)
+            self.last_history_save = now
+
+        with self._lock:
+            self.latest_raw_frame = frame
+            self.latest_annotated_frame = annotated
+            self.latest_zone_results = zone_evals
+            self.latest_detections = detections
+            self.latency_ms = latency
+            self.processed_frames += 1
+
+        return {
+            "detections": detections,
+            "latency_ms": latency,
+            "zones": zone_evals,
+            "total_items": sum(z.get("current_count", 0) for z in zone_evals)
+        }
+
     def get_latest_annotated_jpeg(self) -> Optional[bytes]:
         """Encode the cached annotated frame as JPEG bytes."""
         with self._lock:
