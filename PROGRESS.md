@@ -1,4 +1,4 @@
-# Project Progress Tracker
+﻿# Project Progress Tracker
 
 ## Project summary
 We are building the "ShelfSense" (Intelligent Empty Shelf, Low Stock, and Misplaced Product Monitoring System) - a full-stack computer vision application detecting empty shelf slots, counting stock, flagging misplaced products, predicting upcoming shortages from historical trends, and providing a responsive modern bento-grid web dashboard. The tech stack is Python 3.10+ (Flask, Ultralytics YOLOv8, OpenCV, PyMongo) on the backend and React (Vite) on the frontend. Key decisions: no Raspberry Pi (all processing runs on the PC), MongoDB with automatic in-memory/JSON fallback, and a pluggable video source layer where an ESP32-CAM plugs in later via an HTTP/MJPEG stream URL with no code changes.
@@ -11,25 +11,20 @@ We are building the "ShelfSense" (Intelligent Empty Shelf, Low Stock, and Mispla
 5. Continue from "Current task". Do not redo work marked DONE unless it is broken.
 
 ## Current task
-Phase 8: Bento Grid UI Redesign with Neon-Lime Accent (Completed & Verified).
-- Implemented modern Bento Grid layout matching user reference design: dark-first near-black (#0B0B0B), dark charcoal panels (#161616), neon-lime accents (#E4FF1A to #D7F205), solid white & solid lime bento rhythm cards, 24-28px radius, pill buttons/tabs, and Plus Jakarta Sans typography.
-- Built floating rounded sidebar with logo 'shelfsense' + round lime collapse button, expandable Overview card with white active tab and count badge, and bottom Light/Dark segmented pill toggle.
-- Built 4-row Bento Dashboard (`LiveDashboard.jsx`):
-  - Header row: Greeting ("Welcome back, Store Manager!"), subtitle, tall pill '+' button, solid WHITE stat card ("Items Detected Today") with +7% green badge, and solid LIME stat card ("Alerts Today") with -14% red badge, both with circular ↗ arrow buttons.
-  - Row 2 (3 bento cards): Dark card with half-donut chart (with lime bubble showing total count & left legend), solid LIME card with alerts bar chart (including hatched/striped bar and gradient tallest bar), and Dark card with live annotated camera feed + LIVE neon lime pill and FPS badge.
-  - Row 3: Wide solid WHITE card in Order ID style for active alert with "View Zone" (outline pill) and "Acknowledge" (lime pill) buttons, product avatar, and round action buttons.
-  - Row 4: Dark rounded Shelf Zones table with pill filter tabs (All | Healthy | Low | Empty | Misplaced), search and settings buttons, route connector dots, and colored status text.
-- Re-styled all secondary pages (`AlertsView`, `AnalyticsView`, `VideoUploadView`, `ZonesSettingsView`, `LoginModal`, `BottomNav`, `Header`) adhering to the same visual language.
-- Verified 37/37 unit & live e2e tests pass, and Vite production bundle compiles cleanly with 0 errors.
+Phase 9: YOLO training - Step 1: Get SKU-110K and build subset
+- Step 0 completed: CUDA 12.6 PyTorch (2.14.1+cu126, torchvision 0.29.1+cu126) verified with NVIDIA GeForce RTX 4060 Laptop GPU (8 GB VRAM). Ultralytics 8.4.161 verified. Free disk space on drive D is 149.6 GB.
+- Starting Step 1: Downloading SKU-110K via Ultralytics dataset loader into D:/project/smart shelf/datasets/SKU-110K.
+- After download: Will construct dataset_sku_subset (1,500 train images, 300 val images, filtered for 10-100 boxes if applicable, seed 42) with single class 0: product, write data.yaml, validate, and generate docs/sku_subset_report.md.
 
 ## Next steps (in order)
-- [x] Implement new CSS tokens, fonts, and utilities in `dashboard/src/index.css`
-- [x] Update `Sidebar.jsx` with floating rounded design, expandable Overview card, and bottom Light/Dark pill
-- [x] Build Bento Dashboard layout in `LiveDashboard.jsx` matching the exact reference rhythm
-- [x] Update `Header.jsx`, `AlertsView.jsx`, `AnalyticsView.jsx`, `VideoUploadView.jsx`, `ZonesSettingsView.jsx`, `LoginModal.jsx`
-- [x] Update `BottomNav.jsx` for mobile floating pill navigation
-- [x] Verify production build (`npm run build`) and test suite (`pytest`)
-- [ ] User review and verification
+- [x] Step 0: Install CUDA-enabled PyTorch into venv, verify GPU detection and ultralytics (DONE)
+- [ ] Step 1: Download SKU-110K, build 1,500 train / 300 val subset with data.yaml, generate docs/sku_subset_report.md
+- [ ] Step 2: Stage 1 training (products) on SKU-110K subset with yolov8s.pt in background, monitor & report metrics
+- [ ] Step 3: Check custom shelf dataset for Stage 2 (classes: product, empty_slot); wait or configure splits
+- [ ] Step 4: Stage 2 training (fine-tune shelf_v1 from Stage 1 best.pt)
+- [ ] Step 5: Honest evaluation on test split, confusion matrix, sample predictions to docs/sample_predictions/ and docs/training_results.md
+- [ ] Step 6: Plug shelf_v1.pt into backend, integrate empty_slot logic into stock engine, verify pytest suite
+- [ ] Step 7: Update PROGRESS.md and project docs with final measured numbers
 
 ## Phase checklist
 - [x] Phase 1: Backend skeleton, config, DB layer, video source layer (DONE)
@@ -40,8 +35,10 @@ Phase 8: Bento Grid UI Redesign with Neon-Lime Accent (Completed & Verified).
 - [x] Phase 6: README, dataset configuration, training helper, and final cleanup (DONE)
 - [x] Phase 7: Public deployment (cloud-ready backend, camera agent, auth, Vercel/Render/Atlas configs, DEPLOYMENT.md) (DONE)
 - [x] Phase 8: Bento Grid UI Redesign (Neon-Lime accent, floating sidebar, mixed white/lime/dark cards, half-donut & hatched bar charts, mobile pill bar) (DONE)
+- [ ] Phase 9: YOLO training (Two-stage SKU-110K subset & shelf fine-tuning, evaluation, backend integration)
 
 ## Completed work log
+- 2026-10-21 20:40: Completed Phase 9 Step 0: Verified hardware and environment. Resolved CPU PyTorch limitation by installing CUDA 12.6 PyTorch build (torch 2.14.1+cu126, torchvision 0.29.1+cu126) in d:\\project\\venv. Verified torch.cuda.is_available() == True, GPU name: NVIDIA GeForce RTX 4060 Laptop GPU (8188 MiB VRAM), Ultralytics 8.4.161. Verified 149.6 GB disk space available on drive D. Configured ultralytics datasets_dir to D:/project/smart shelf/datasets. (Files: PROGRESS.md)
 - 2026-10-17 14:28: Resolved login connection issue: Terminated stale backend background process running pre-auth codebase, restarted Flask with live `/login` endpoint and JWT session token generation, relaxed local dev CORS policy (`origins: "*"`), and made `API_BASE` dynamically match current browser protocol & host. Verified 37/37 pytest test suite passes and login succeeds with HTTP 200. (Files: backend/app.py, backend/tests/test_e2e_live.py, dashboard/src/services/api.js, PROGRESS.md)
 - 2026-10-17 14:15: Completed Phase 8 UI Redesign: Built dark-first bento grid dashboard with neon-lime (#E4FF1A) signature accent, mixed dark/white/lime card rhythm, 24-28px radius, pill buttons and segmented tabs, floating rounded sidebar with expandable Overview card, 4-row bento dashboard layout (greeting header with tall '+' button + white and lime stat cards, shelf status half-donut chart with lime total bubble, alerts bar chart with diagonal hatched bar on lime card, live annotated camera feed card with LIVE & FPS pills, wide white alert card with View Zone / Acknowledge pills, and dark rounded shelf zones table with route connector dots and pill filter tabs). Updated all secondary views and modals. Tested and confirmed 37/37 pytest test suite passes and Vite production build compiles with 0 errors. (Files: dashboard/src/index.css, dashboard/src/App.jsx, dashboard/src/pages/LiveDashboard.jsx, dashboard/src/components/Sidebar.jsx, dashboard/src/components/BottomNav.jsx, dashboard/src/components/Header.jsx, dashboard/src/components/LoginModal.jsx, dashboard/src/pages/AlertsView.jsx, dashboard/src/pages/AnalyticsView.jsx, dashboard/src/pages/VideoUploadView.jsx, dashboard/src/pages/ZonesSettingsView.jsx, dashboard/index.html, PROGRESS.md)
 - 2026-10-17 13:40: Completed Phase 7: Made backend cloud-ready (dynamic PORT, Gunicorn 1 worker / 4 threads, opencv-python-headless in requirements-prod.txt, CPU PyTorch, frame resize to 640px, MODEL_URL auto-download, strict CORS_ORIGINS, uploads size & cleanup limits); created standalone camera agent (agent/camera_agent.py, agent/.env, scripts/run_agent.bat) with retry/backoff and POST /ingest-frame; implemented JWT authentication with 48-byte HMAC key, route protection with @require_auth, in-memory rate limiting, and safe path checks; upgraded React frontend with dynamic VITE_API_URL resolver, LoginModal, lock/logout action, cloud cold-start waking up banner, vercel.json SPA rewrite, and PWA service worker zero API caching; created backend/Dockerfile, .dockerignore, render.yaml blueprint, docker-compose.yml; authored comprehensive DEPLOYMENT.md; verified 37/37 pytest tests and Vite build succeed with zero errors.
@@ -73,3 +70,4 @@ Phase 8: Bento Grid UI Redesign with Neon-Lime Accent (Completed & Verified).
   `.\scripts\run_all.bat`
 - Open dashboard:
   `http://localhost:5173`
+
