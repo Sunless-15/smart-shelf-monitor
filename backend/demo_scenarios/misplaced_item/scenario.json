@@ -1,0 +1,8 @@
+{
+  "title": "Misplaced Product Detection",
+  "description": "10-frame sequence demonstrating foreign category product placement in an assigned shelf zone, validating misplaced item alerts.",
+  "interval": 5.0,
+  "loop": true,
+  "total_frames": 10,
+  "source": "Constructed from SKU-110K test split"
+}

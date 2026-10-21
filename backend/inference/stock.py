@@ -1,7 +1,8 @@
-"""Stock counting, zone occupancy, and misplaced item detection logic.
+﻿"""Stock counting, zone occupancy, and misplaced item detection logic.
 
 Processes YOLO detections against defined shelf zones, calculating stock counts,
-stock percentages, state (ok, low, empty), and identifying misplaced products.
+stock percentages, state (ok, low, empty), and identifying misplaced products as well
+as detected empty slots.
 """
 
 import logging
@@ -31,8 +32,17 @@ def analyze_shelf_zones(
     zones: List[Dict[str, Any]], 
     detections: List[Dict[str, Any]]
 ) -> List[Dict[str, Any]]:
-    """Analyze stock status and misplaced items for all shelf zones.
+    """Analyze stock status, empty slots, and misplaced items for all shelf zones.
 
+    Rules:
+    - Products matching expected_class (or general 'product') count toward current_count.
+    - Detections with class 'empty_slot' inside a zone are tracked as explicit empty slot evidence.
+    - Detections of a foreign product category are tracked as misplaced items.
+    - Status:
+      * 'empty' if current_count == 0.
+      * 'low' if 0 < stock_percent <= low_threshold.
+      * 'ok' if stock_percent > low_threshold.
+    
     Args:
         zones: List of zone definitions from DB.
         detections: List of detection dictionaries from YOLODetector.
@@ -46,11 +56,15 @@ def analyze_shelf_zones(
         zone_id = str(zone.get("_id", zone.get("id", "")))
         zone_name = zone.get("name", "Unnamed Zone")
         expected_class = str(zone.get("expected_class", "")).lower().strip()
+        if not expected_class or expected_class == "all":
+            expected_class = "product"
+
         full_count = max(1, int(zone.get("full_count", 5)))
         low_threshold = float(zone.get("low_threshold", 0.35))
         coords = zone.get("coords", {"x1": 0.0, "y1": 0.0, "x2": 1.0, "y2": 1.0})
 
         matching_detections: List[Dict[str, Any]] = []
+        empty_slot_detections: List[Dict[str, Any]] = []
         misplaced_detections: List[Dict[str, Any]] = []
 
         # Categorize detections falling inside this zone
@@ -58,25 +72,44 @@ def analyze_shelf_zones(
             center = det.get("center", [0.0, 0.0])
             if is_point_in_zone(center, coords):
                 det_class = det.get("class_name", "").lower().strip()
-                if det_class == expected_class:
+                
+                # Check 1: Explicit empty slot
+                if det_class == "empty_slot" or det_class == "empty":
+                    empty_slot_detections.append(det)
+                # Check 2: Matching product class
+                elif (
+                    det_class == expected_class or 
+                    expected_class == "product" or 
+                    (expected_class in ["bottle", "can", "cup", "snack_box"] and det_class in [expected_class, "product"])
+                ):
                     matching_detections.append(det)
+                # Check 3: Foreign product (misplaced)
                 else:
                     misplaced_detections.append(det)
 
         item_count = len(matching_detections)
+        empty_count = len(empty_slot_detections)
         misplaced_count = len(misplaced_detections)
         
         # Stock percentage calculation
         stock_percent = round(min(1.0, item_count / float(full_count)), 3)
 
         # State determination
-        # Empty space fallback: if matching item count is 0, the slot is empty
         if item_count == 0:
             state = "empty"
         elif stock_percent <= low_threshold:
             state = "low"
         else:
             state = "ok"
+
+        # Calculate empty slot evidence area
+        empty_slot_area = 0.0
+        for es in empty_slot_detections:
+            box = es.get("box", [0, 0, 0, 0])
+            w = max(0.0, box[2] - box[0])
+            h = max(0.0, box[3] - box[1])
+            empty_slot_area += (w * h)
+        empty_slot_area = round(empty_slot_area, 4)
 
         evaluated_zones.append({
             "zone_id": zone_id,
@@ -86,6 +119,8 @@ def analyze_shelf_zones(
             "low_threshold": low_threshold,
             "coords": coords,
             "current_count": item_count,
+            "empty_slot_count": empty_count,
+            "empty_slot_area": empty_slot_area,
             "stock_percent": stock_percent,
             "state": state,
             "is_empty": (state == "empty"),
@@ -100,6 +135,15 @@ def analyze_shelf_zones(
                     "pixel_box": d.get("pixel_box"),
                 }
                 for d in misplaced_detections
+            ],
+            "empty_slot_items": [
+                {
+                    "class_name": "empty_slot",
+                    "confidence": d.get("confidence"),
+                    "box": d.get("box"),
+                    "pixel_box": d.get("pixel_box"),
+                }
+                for d in empty_slot_detections
             ],
             "detected_items": [
                 {
@@ -126,6 +170,7 @@ def annotate_frame(
     - OK: Emerald Green (50, 205, 50)
     - Low: Amber/Orange (0, 165, 255)
     - Empty: Vivid Red (0, 0, 255)
+    - Empty Slot Box: Sky Blue / Cyan (255, 180, 0)
     - Misplaced: Magenta (255, 0, 255)
     """
     if frame is None or frame.size == 0:
@@ -155,6 +200,7 @@ def annotate_frame(
         full = zone.get("full_count", 1)
         pct = int(zone.get("stock_percent", 0.0) * 100)
         misplaced = zone.get("misplaced_count", 0)
+        empty_slots = zone.get("empty_slot_count", 0)
 
         # Draw transparent fill overlay for zone
         overlay = annotated.copy()
@@ -162,21 +208,25 @@ def annotate_frame(
         alpha = 0.12 if state != "empty" else 0.20
         cv2.addWeighted(overlay, alpha, annotated, 1 - alpha, 0, annotated)
 
-        # Draw zone boundary outline (dashed/solid)
+        # Draw zone boundary outline
         cv2.rectangle(annotated, (x1, y1), (x2, y2), color, 2)
 
         # Draw zone header banner
         banner_h = 24
-        cv2.rectangle(annotated, (x1, max(0, y1 - banner_h)), (min(w, x1 + 240), y1), (25, 25, 25), -1)
-        cv2.rectangle(annotated, (x1, max(0, y1 - banner_h)), (min(w, x1 + 240), y1), color, 1)
-
         header_text = f"{name}: {count}/{full} ({pct}%) [{state.upper()}]"
+        if empty_slots > 0:
+            header_text += f" (Empty slots: {empty_slots})"
+            
+        banner_w = min(w - x1, max(240, len(header_text) * 8))
+        cv2.rectangle(annotated, (x1, max(0, y1 - banner_h)), (x1 + banner_w, y1), (25, 25, 25), -1)
+        cv2.rectangle(annotated, (x1, max(0, y1 - banner_h)), (x1 + banner_w, y1), color, 1)
+
         cv2.putText(
             annotated, 
             header_text, 
             (x1 + 4, max(14, y1 - 7)), 
             cv2.FONT_HERSHEY_SIMPLEX, 
-            0.38, 
+            0.36, 
             (255, 255, 255), 
             1, 
             cv2.LINE_AA
@@ -199,7 +249,7 @@ def annotate_frame(
 
     # 2. Draw Individual Detection Boxes
     for zone in zone_results:
-        # Expected items
+        # Expected product items (Green)
         for item in zone.get("detected_items", []):
             pb = item.get("pixel_box")
             if pb and len(pb) == 4:
@@ -216,7 +266,24 @@ def annotate_frame(
                     cv2.LINE_AA
                 )
 
-        # Misplaced items
+        # Explicit empty slot boxes (Cyan/Sky blue)
+        for item in zone.get("empty_slot_items", []):
+            pb = item.get("pixel_box")
+            if pb and len(pb) == 4:
+                px1, py1, px2, py2 = pb
+                cv2.rectangle(annotated, (px1, py1), (px2, py2), (255, 180, 0), 2)
+                cv2.putText(
+                    annotated, 
+                    f"EMPTY SLOT {item.get('confidence', '')}", 
+                    (px1, max(12, py1 - 4)), 
+                    cv2.FONT_HERSHEY_SIMPLEX, 
+                    0.36, 
+                    (255, 180, 0), 
+                    1, 
+                    cv2.LINE_AA
+                )
+
+        # Misplaced items (Magenta)
         for item in zone.get("misplaced_items", []):
             pb = item.get("pixel_box")
             if pb and len(pb) == 4:

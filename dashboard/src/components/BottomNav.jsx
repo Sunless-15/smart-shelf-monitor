@@ -1,13 +1,14 @@
 import React from 'react';
-import { LayoutDashboard, Bell, BarChart3, UploadCloud, Sliders } from 'lucide-react';
+import { LayoutDashboard, Bell, BarChart3, UploadCloud, Sliders, Sparkles } from 'lucide-react';
 
 export default function BottomNav({ currentTab, setCurrentTab, unreadAlertsCount = 0 }) {
   const tabs = [
     { id: 'dashboard', label: 'Shelves', icon: LayoutDashboard },
+    { id: 'demo', label: 'Demo', icon: Sparkles },
     { id: 'alerts', label: 'Alerts', icon: Bell, badge: unreadAlertsCount },
     { id: 'analytics', label: 'Analytics', icon: BarChart3 },
     { id: 'upload', label: 'Upload', icon: UploadCloud },
-    { id: 'settings', label: 'Zones', icon: Sliders },
+    { id: 'settings', label: 'Settings', icon: Sliders },
   ];
 
   return (

@@ -41,3 +41,15 @@ dataset_sku_subset/
 Thumbs.db
 .vscode/
 .idea/
+
+esp32-firmware/**/config.h
+
+# Datasets and heavy data
+dataset/
+weights/
+videos/
+*.mp4
+*.avi
+*.mov
+config.h
+**/config.h

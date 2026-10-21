@@ -8,6 +8,8 @@ import AlertsView from './pages/AlertsView';
 import AnalyticsView from './pages/AnalyticsView';
 import VideoUploadView from './pages/VideoUploadView';
 import ZonesSettingsView from './pages/ZonesSettingsView';
+import DemoView from './pages/DemoView';
+import { getCameraStatus } from './services/api';
 
 import { 
   getAlerts, 
@@ -27,6 +29,7 @@ export default function App() {
   const [theme, setTheme] = useState('dark');
   const [toastAlert, setToastAlert] = useState(null);
   const [lastSeenAlertId, setLastSeenAlertId] = useState(null);
+  const [cameraStatus, setCameraStatus] = useState(null);
   const [showLogin, setShowLogin] = useState(!getAuthToken());
   const [serverWakingUp, setServerWakingUp] = useState(false);
 
@@ -57,7 +60,8 @@ export default function App() {
 
     const checkStatus = async () => {
       try {
-        const [health, alertsData, srcData] = await Promise.all([
+        const [health, alertsData, srcData, camData] = await Promise.all([
+          getCameraStatus().catch(() => null),
           getHealth(),
           getAlerts(true, 5),
           getSource()
@@ -69,6 +73,7 @@ export default function App() {
 
         const unackAlerts = alertsData.alerts || [];
         setUnreadAlertsCount(unackAlerts.length);
+        if (camData) setCameraStatus(camData);
 
         // Check if demo mode is active
         if (srcData && srcData.type === 'video' && srcData.value?.includes('sample_shelf')) {
@@ -147,6 +152,8 @@ export default function App() {
         return { title: 'Predictive Analytics', subtitle: 'Historical depletion trends, shortage forecasts, and system telemetry' };
       case 'upload':
         return { title: 'Video Analysis Studio', subtitle: 'Upload recorded store videos for automated YOLO annotation and timeline logging' };
+      case 'demo':
+        return { title: 'Vision Studio & Sandbox', subtitle: 'Test YOLO detections live on sample gallery images or custom shelf uploads' };
       case 'settings':
         return { title: 'Zones & Video Sources', subtitle: 'Configure shelf detection boundaries and switch camera/ESP32-CAM stream inputs' };
       default:
@@ -200,6 +207,37 @@ export default function App() {
 
       {/* Main App Content Viewport */}
       <main className="main-viewport" style={{ marginTop: serverWakingUp ? '2rem' : 0 }}>
+        {/* Camera Mode Honest Badge */}
+        {cameraStatus && (
+          <div style={{
+            background: cameraStatus.is_simulated ? 'rgba(255, 149, 0, 0.12)' : 'rgba(52, 199, 89, 0.12)',
+            border: `1px solid ${cameraStatus.is_simulated ? '#FF9500' : '#34C759'}60`,
+            borderRadius: '16px',
+            padding: '6px 14px',
+            marginBottom: '1rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            fontSize: '0.8rem',
+            color: cameraStatus.is_simulated ? '#FF9500' : '#34C759',
+            fontWeight: 700
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{
+                width: '8px',
+                height: '8px',
+                borderRadius: '50%',
+                background: cameraStatus.is_simulated ? '#FF9500' : '#34C759',
+                boxShadow: `0 0 8px ${cameraStatus.is_simulated ? '#FF9500' : '#34C759'}`
+              }} />
+              <span>{cameraStatus.badge_text}</span>
+            </div>
+            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 500 }}>
+              {cameraStatus.is_simulated ? 'Simulated feed (tagged simulated=true)' : 'Hardware Feed Active'}
+            </span>
+          </div>
+        )}
+        
         {currentTab !== 'dashboard' && (
           <Header
             title={pageInfo.title}
@@ -218,6 +256,7 @@ export default function App() {
         {currentTab === 'alerts' && <AlertsView />}
         {currentTab === 'analytics' && <AnalyticsView />}
         {currentTab === 'upload' && <VideoUploadView />}
+        {currentTab === 'demo' && <DemoView />}
         {currentTab === 'settings' && <ZonesSettingsView />}
       </main>
 

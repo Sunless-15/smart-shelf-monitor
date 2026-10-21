@@ -1,0 +1,26 @@
+{
+  "title": "Customer Blocking (3-Photo Confirmation Test)",
+  "description": "10-frame sequence where a shopper momentarily obscures the camera view for 2 frames (photos 005 and 006) before walking away. Validates the 3-photo confirmation mechanism: counter reaches 'Empty seen 2 of 3', but because frame 007 returns to Healthy, counter resets and ZERO false alerts are raised.",
+  "interval": 5.0,
+  "loop": true,
+  "total_frames": 10,
+  "source": "Constructed sequence from SKU-110K unseen test split with simulated shopper occlusion",
+  "expected_timeline": [
+    {
+      "frames": "001-004",
+      "status": "Healthy (confirmed)"
+    },
+    {
+      "frames": "005",
+      "status": "Blocked (raw Empty, counter: 1 of 3, NO alert)"
+    },
+    {
+      "frames": "006",
+      "status": "Blocked (raw Empty, counter: 2 of 3, NO alert)"
+    },
+    {
+      "frames": "007-010",
+      "status": "Healthy (camera clear, confirmation counter resets to 0, ZERO alerts emitted)"
+    }
+  ]
+}

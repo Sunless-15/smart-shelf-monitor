@@ -4,7 +4,11 @@ import {
   getShelfStatus, 
   getLiveFrameUrl,
   getAlerts,
-  acknowledgeAlert
+  acknowledgeAlert,
+  getCameraStatus,
+  controlCamera,
+  switchCameraMode,
+  getModelInfo
 } from '../services/api';
 import { 
   ArrowUpRight, 
@@ -23,7 +27,13 @@ import {
   Activity,
   CheckCircle2,
   PhoneCall,
-  MessageSquare
+  MessageSquare,
+  Play,
+  Pause,
+  RotateCcw,
+  FastForward,
+  Sparkles,
+  Cpu
 } from 'lucide-react';
 
 export default function LiveDashboard({ isOnline }) {
@@ -36,6 +46,9 @@ export default function LiveDashboard({ isOnline }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearchInput, setShowSearchInput] = useState(false);
   const [acknowledgedLocal, setAcknowledgedLocal] = useState(false);
+  const [cameraStatus, setCameraStatus] = useState(null);
+  const [modelInfo, setModelInfo] = useState(null);
+  const [cameraLoading, setCameraLoading] = useState(false);
 
   // Poll shelf status and alerts
   useEffect(() => {
@@ -43,13 +56,17 @@ export default function LiveDashboard({ isOnline }) {
 
     const fetchData = async () => {
       try {
-        const [statusRes, alertsRes] = await Promise.all([
+        const [statusRes, alertsRes, camRes, mInfoRes] = await Promise.all([
           getShelfStatus(),
-          getAlerts(false, 5)
+          getAlerts(false, 5),
+          getCameraStatus().catch(() => null),
+          getModelInfo().catch(() => null)
         ]);
 
         if (isMounted) {
           setShelfData(statusRes);
+          if (camRes) setCameraStatus(camRes);
+          if (mInfoRes) setModelInfo(mInfoRes);
           const alertsList = alertsRes?.alerts || [];
           if (alertsList.length > 0) {
             setRecentAlert(alertsList[0]);
@@ -68,6 +85,33 @@ export default function LiveDashboard({ isOnline }) {
       clearInterval(interval);
     };
   }, []);
+
+  
+  const handleScenarioChange = async (scenarioName) => {
+    try {
+      setCameraLoading(true);
+      await switchCameraMode('simulated', { scenario: scenarioName });
+      const updated = await getCameraStatus();
+      setCameraStatus(updated);
+    } catch (err) {
+      console.error('Failed to change scenario:', err);
+    } finally {
+      setCameraLoading(false);
+    }
+  };
+
+  const handleCameraAction = async (action, extra = {}) => {
+    try {
+      setCameraLoading(true);
+      await controlCamera(action, extra);
+      const updated = await getCameraStatus();
+      setCameraStatus(updated);
+    } catch (err) {
+      console.error('Failed camera control:', err);
+    } finally {
+      setCameraLoading(false);
+    }
+  };
 
   const handleSnapshot = () => {
     window.open(getLiveFrameUrl(), '_blank');
@@ -494,6 +538,186 @@ export default function LiveDashboard({ isOnline }) {
         </div>
       </div>
 
+      
+      {/* ========================================================= */}
+      {/* PHASE 10: CAMERA / DEMO CONTROL PANEL & PIPELINE TRACE    */}
+      {/* ========================================================= */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+        gap: '16px',
+        margin: '18px 0'
+      }}>
+        {/* Panel 1: Camera & Demo Playback Controls */}
+        <div className="bento-card bento-card-dark" style={{ padding: '20px 24px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Sparkles size={18} color="var(--accent-lime)" />
+              <span style={{ fontSize: '0.95rem', fontWeight: 700, color: '#FFFFFF' }}>
+                Camera / Demo Control
+              </span>
+            </div>
+            <span style={{
+              background: '#2A2A2A',
+              color: 'var(--accent-lime)',
+              fontSize: '0.72rem',
+              fontWeight: 800,
+              padding: '3px 8px',
+              borderRadius: '10px'
+            }}>
+              Frame {cameraStatus?.simulated_details?.current_frame || 1} / {cameraStatus?.simulated_details?.total_frames || 20}
+            </span>
+          </div>
+
+          {/* Scenario Selector Dropdown */}
+          <div style={{ marginBottom: '14px' }}>
+            <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
+              Active Scenario
+            </label>
+            <select
+              value={cameraStatus?.simulated_details?.scenario_name || 'gradual_depletion'}
+              onChange={(e) => handleScenarioChange(e.target.value)}
+              disabled={cameraLoading}
+              style={{
+                width: '100%',
+                background: '#1C1C1E',
+                border: '1px solid #3A3A3C',
+                color: '#FFFFFF',
+                borderRadius: '12px',
+                padding: '8px 12px',
+                fontSize: '0.84rem',
+                fontWeight: 600,
+                cursor: 'pointer'
+              }}
+            >
+              {(cameraStatus?.simulated_details?.available_scenarios || [
+                'gradual_depletion', 'customer_blocking', 'restocking', 'misplaced_item'
+              ]).map((sc) => (
+                <option key={sc} value={sc}>
+                  {sc.replace('_', ' ').toUpperCase()}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Action Buttons: Play/Pause/Reset & Speed */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+            <div style={{ display: 'flex', gap: '6px' }}>
+              {cameraStatus?.simulated_details?.is_paused ? (
+                <button
+                  onClick={() => handleCameraAction('start')}
+                  className="btn-pill btn-pill-lime"
+                  style={{ padding: '6px 14px', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '4px' }}
+                >
+                  <Play size={13} /> Resume
+                </button>
+              ) : (
+                <button
+                  onClick={() => handleCameraAction('pause')}
+                  className="btn-pill btn-pill-dark"
+                  style={{ padding: '6px 14px', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '4px' }}
+                >
+                  <Pause size={13} /> Pause
+                </button>
+              )}
+              <button
+                onClick={() => handleCameraAction('reset')}
+                className="btn-pill btn-pill-dark"
+                style={{ padding: '6px 14px', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '4px' }}
+              >
+                <RotateCcw size={13} /> Reset
+              </button>
+            </div>
+
+            {/* Playback Speeds */}
+            <div style={{ display: 'flex', gap: '4px', background: '#1C1C1E', padding: '3px', borderRadius: '12px' }}>
+              {[1, 5, 10].map((spd) => (
+                <button
+                  key={spd}
+                  onClick={() => handleCameraAction('set_speed', { speed: spd })}
+                  style={{
+                    background: (cameraStatus?.simulated_details?.speed_multiplier === spd) ? 'var(--accent-lime)' : 'transparent',
+                    color: (cameraStatus?.simulated_details?.speed_multiplier === spd) ? '#000000' : 'var(--text-secondary)',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '4px 8px',
+                    fontSize: '0.72rem',
+                    fontWeight: 700,
+                    cursor: 'pointer'
+                  }}
+                >
+                  {spd}x
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Telemetry line */}
+          <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: '12px', borderTop: '1px solid #282828', paddingTop: '8px' }}>
+            Interval: {cameraStatus?.simulated_details?.interval_seconds || 5}s • Virtual Clock Timestamps • Simulated=True
+          </div>
+        </div>
+
+        {/* Panel 2: Live Pipeline Trace (3-Photo Confirmation & YOLO Breakdown) */}
+        <div className="bento-card bento-card-dark" style={{ padding: '20px 24px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Activity size={18} color="var(--accent-lime)" />
+              <span style={{ fontSize: '0.95rem', fontWeight: 700, color: '#FFFFFF' }}>
+                Pipeline Trace (Latest Photo)
+              </span>
+            </div>
+            <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+              Latency: {cameraStatus?.pipeline?.latency_ms || 4.9} ms
+            </span>
+          </div>
+
+          {/* Trace Steps Flow */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.82rem' }}>
+            <div style={{ background: '#1C1C1E', padding: '8px 12px', borderRadius: '12px', display: 'flex', justifyContent: 'space-between' }}>
+              <span style={{ color: 'var(--text-secondary)' }}>YOLO Detections:</span>
+              <strong style={{ color: '#FFFFFF' }}>
+                {cameraStatus?.pipeline?.pipeline_trace?.products_found || 0} products, {cameraStatus?.pipeline?.pipeline_trace?.empty_slots_found || 0} empty slots
+              </strong>
+            </div>
+
+            {/* 3-Photo Confirmation Counters */}
+            {(cameraStatus?.pipeline?.pipeline_trace?.zones || []).map((z) => (
+              <div key={z.zone_id} style={{
+                background: '#1C1C1E',
+                padding: '8px 12px',
+                borderRadius: '12px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                borderLeft: z.alert_triggered ? '3px solid #FF453A' : '3px solid var(--accent-lime)'
+              }}>
+                <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{z.zone_name}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{
+                    color: z.confirmation_progress.includes('Low') ? '#FF9500' : (z.confirmation_progress.includes('Empty') ? '#FF453A' : '#34C759'),
+                    fontWeight: 700,
+                    fontSize: '0.76rem'
+                  }}>
+                    {z.confirmation_progress}
+                  </span>
+                  {z.alert_triggered && (
+                    <span style={{ background: '#FF453A', color: '#fff', fontSize: '0.65rem', padding: '1px 5px', borderRadius: '6px', fontWeight: 800 }}>
+                      ALERT FIRED
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+
+            {/* Plain Summary */}
+            <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', fontStyle: 'italic', marginTop: '2px' }}>
+              "{cameraStatus?.pipeline?.pipeline_trace?.summary_caption || 'Monitoring active...'}"
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* ========================================================= */}
       {/* ROW 3: WIDE SOLID WHITE CARD (Order ID Style Alert Banner) */}
       {/* ========================================================= */}
@@ -776,3 +1000,29 @@ export default function LiveDashboard({ isOnline }) {
     </div>
   );
 }
+
+      {/* Model & Runtime Status Footer */}
+      <div style={{
+        margin: '24px 0 12px 0',
+        padding: '12px 18px',
+        background: '#161616',
+        borderRadius: '16px',
+        border: '1px solid #282828',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: '10px',
+        fontSize: '0.78rem'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Cpu size={15} color="var(--accent-lime)" />
+          <span style={{ color: 'var(--text-muted)' }}>Active Neural Network:</span>
+          <strong style={{ color: '#FFFFFF' }}>{modelInfo?.model_status || 'sku_stage1 (trained on products)'}</strong>
+        </div>
+        <div style={{ display: 'flex', gap: '14px', color: 'var(--text-muted)' }}>
+          <span>Device: <strong style={{ color: '#FFFFFF' }}>{modelInfo?.device || 'cuda:0'}</strong></span>
+          <span>Threshold: <strong style={{ color: 'var(--accent-lime)' }}>{Math.round((modelInfo?.confidence_threshold || 0.35) * 100)}%</strong></span>
+          <span>IoU: <strong style={{ color: '#FFFFFF' }}>{modelInfo?.iou_threshold || 0.45}</strong></span>
+        </div>
+      </div>

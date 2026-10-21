@@ -1,0 +1,218 @@
+[
+  {
+    "id": "sample_01",
+    "filename": "sample_01_test_11.jpg",
+    "title": "Full Shelf - Packed Bottles & Cans (Test Split)",
+    "category": "full_shelf",
+    "original_filename": "test_11.jpg",
+    "box_count": 140,
+    "source": "SKU-110K Test Split (Never Trained On)"
+  },
+  {
+    "id": "sample_02",
+    "filename": "sample_02_test_40.jpg",
+    "title": "Full Shelf - Packaged Goods (Test Split)",
+    "category": "full_shelf",
+    "original_filename": "test_40.jpg",
+    "box_count": 140,
+    "source": "SKU-110K Test Split (Never Trained On)"
+  },
+  {
+    "id": "sample_03",
+    "filename": "sample_03_test_56.jpg",
+    "title": "Full Shelf - Retail Grocery Wall (Test Split)",
+    "category": "full_shelf",
+    "original_filename": "test_56.jpg",
+    "box_count": 140,
+    "source": "SKU-110K Test Split (Never Trained On)"
+  },
+  {
+    "id": "sample_04",
+    "filename": "sample_04_test_159.jpg",
+    "title": "Full Shelf - Cereal & Snacks (Test Split)",
+    "category": "full_shelf",
+    "original_filename": "test_159.jpg",
+    "box_count": 140,
+    "source": "SKU-110K Test Split (Never Trained On)"
+  },
+  {
+    "id": "sample_05",
+    "filename": "sample_05_test_200.jpg",
+    "title": "Full Shelf - High Density Display (Test Split)",
+    "category": "full_shelf",
+    "original_filename": "test_200.jpg",
+    "box_count": 148,
+    "source": "SKU-110K Test Split (Never Trained On)"
+  },
+  {
+    "id": "sample_06",
+    "filename": "sample_06_test_203.jpg",
+    "title": "Full Shelf - Beverage Rows (Test Split)",
+    "category": "full_shelf",
+    "original_filename": "test_203.jpg",
+    "box_count": 148,
+    "source": "SKU-110K Test Split (Never Trained On)"
+  },
+  {
+    "id": "sample_07",
+    "filename": "sample_07_test_281.jpg",
+    "title": "Full Shelf - Multi-tier Grocery Rack (Test Split)",
+    "category": "full_shelf",
+    "original_filename": "test_281.jpg",
+    "box_count": 142,
+    "source": "SKU-110K Test Split (Never Trained On)"
+  },
+  {
+    "id": "sample_08",
+    "filename": "sample_08_test_311.jpg",
+    "title": "Full Shelf - Packaged Condiments (Test Split)",
+    "category": "full_shelf",
+    "original_filename": "test_311.jpg",
+    "box_count": 148,
+    "source": "SKU-110K Test Split (Never Trained On)"
+  },
+  {
+    "id": "sample_09",
+    "filename": "sample_09_test_16.jpg",
+    "title": "Half-Empty - Middle Rack Depleted (Test Split)",
+    "category": "half_empty",
+    "original_filename": "test_16.jpg",
+    "box_count": 68,
+    "source": "SKU-110K Test Split (Never Trained On)"
+  },
+  {
+    "id": "sample_10",
+    "filename": "sample_10_test_64.jpg",
+    "title": "Half-Empty - Moderate Stock Level (Test Split)",
+    "category": "half_empty",
+    "original_filename": "test_64.jpg",
+    "box_count": 74,
+    "source": "SKU-110K Test Split (Never Trained On)"
+  },
+  {
+    "id": "sample_11",
+    "filename": "sample_11_test_294.jpg",
+    "title": "Half-Empty - Gaps Appearing on Lower Shelves (Test Split)",
+    "category": "half_empty",
+    "original_filename": "test_294.jpg",
+    "box_count": 72,
+    "source": "SKU-110K Test Split (Never Trained On)"
+  },
+  {
+    "id": "sample_12",
+    "filename": "sample_12_test_864.jpg",
+    "title": "Half-Empty - Clear Tray Gaps (Test Split)",
+    "category": "half_empty",
+    "original_filename": "test_864.jpg",
+    "box_count": 70,
+    "source": "SKU-110K Test Split (Never Trained On)"
+  },
+  {
+    "id": "sample_13",
+    "filename": "sample_13_test_1348.jpg",
+    "title": "Half-Empty - Irregular Product Distribution (Test Split)",
+    "category": "half_empty",
+    "original_filename": "test_1348.jpg",
+    "box_count": 66,
+    "source": "SKU-110K Test Split (Never Trained On)"
+  },
+  {
+    "id": "sample_14",
+    "filename": "sample_14_test_2151.jpg",
+    "title": "Half-Empty - Left Side Depleted (Test Split)",
+    "category": "half_empty",
+    "original_filename": "test_2151.jpg",
+    "box_count": 66,
+    "source": "SKU-110K Test Split (Never Trained On)"
+  },
+  {
+    "id": "sample_15",
+    "filename": "sample_15_test_2310.jpg",
+    "title": "Half-Empty - Visible Empty Slot Areas (Test Split)",
+    "category": "half_empty",
+    "original_filename": "test_2310.jpg",
+    "box_count": 74,
+    "source": "SKU-110K Test Split (Never Trained On)"
+  },
+  {
+    "id": "sample_16",
+    "filename": "sample_16_test_2866.jpg",
+    "title": "Half-Empty - Partial Stock Display (Test Split)",
+    "category": "half_empty",
+    "original_filename": "test_2866.jpg",
+    "box_count": 66,
+    "source": "SKU-110K Test Split (Never Trained On)"
+  },
+  {
+    "id": "sample_17",
+    "filename": "sample_17_test_193.jpg",
+    "title": "Low Stock - Critical Threshold (<35%) (Test Split)",
+    "category": "low_stock",
+    "original_filename": "test_193.jpg",
+    "box_count": 36,
+    "source": "SKU-110K Test Split (Never Trained On)"
+  },
+  {
+    "id": "sample_18",
+    "filename": "sample_18_test_228.jpg",
+    "title": "Low Stock - Dispersed Remaining Items (Test Split)",
+    "category": "low_stock",
+    "original_filename": "test_228.jpg",
+    "box_count": 35,
+    "source": "SKU-110K Test Split (Never Trained On)"
+  },
+  {
+    "id": "sample_19",
+    "filename": "sample_19_test_264.jpg",
+    "title": "Low Stock - Only 25 Items Remaining (Test Split)",
+    "category": "low_stock",
+    "original_filename": "test_264.jpg",
+    "box_count": 25,
+    "source": "SKU-110K Test Split (Never Trained On)"
+  },
+  {
+    "id": "sample_20",
+    "filename": "sample_20_test_974.jpg",
+    "title": "Low Stock - Sparse Shelf Display (20 items) (Test Split)",
+    "category": "low_stock",
+    "original_filename": "test_974.jpg",
+    "box_count": 20,
+    "source": "SKU-110K Test Split (Never Trained On)"
+  },
+  {
+    "id": "sample_21",
+    "filename": "sample_21_test_1020.jpg",
+    "title": "Low Stock - Upper Racks Empty (Test Split)",
+    "category": "low_stock",
+    "original_filename": "test_1020.jpg",
+    "box_count": 42,
+    "source": "SKU-110K Test Split (Never Trained On)"
+  },
+  {
+    "id": "sample_22",
+    "filename": "sample_22_test_1397.jpg",
+    "title": "Nearly Empty - Out-of-Stock Alert Imminent (Test Split)",
+    "category": "nearly_empty",
+    "original_filename": "test_1397.jpg",
+    "box_count": 20,
+    "source": "SKU-110K Test Split (Never Trained On)"
+  },
+  {
+    "id": "sample_23",
+    "filename": "sample_23_test_2010.jpg",
+    "title": "Low Stock - Sparse Single Row (Test Split)",
+    "category": "low_stock",
+    "original_filename": "test_2010.jpg",
+    "box_count": 33,
+    "source": "SKU-110K Test Split (Never Trained On)"
+  },
+  {
+    "id": "sample_24",
+    "filename": "sample_24_test_2199.jpg",
+    "title": "Nearly Empty - Critical Shelf Depletion (28 items) (Test Split)",
+    "category": "nearly_empty",
+    "original_filename": "test_2199.jpg",
+    "box_count": 28,
+    "source": "SKU-110K Test Split (Never Trained On)"
+  }
+]

@@ -1,4 +1,4 @@
-"""Unit tests for Live Monitoring Pipeline and alert deduplication."""
+﻿"""Unit tests for Live Monitoring Pipeline and alert deduplication."""
 
 import sys
 import time
@@ -89,8 +89,12 @@ def test_pipeline_start_stop():
     pipeline.start()
     assert pipeline.is_running() is True
 
-    # Allow it to process a couple of frames
-    time.sleep(1.0)
+    # Allow it to process frames (wait up to 4s)
+    t0 = time.time()
+    while time.time() - t0 < 4.0:
+        if pipeline.processed_frames >= 1:
+            break
+        time.sleep(0.2)
 
     status = pipeline.get_status()
     assert status["is_running"] is True

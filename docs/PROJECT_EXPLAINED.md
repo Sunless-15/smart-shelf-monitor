@@ -516,6 +516,11 @@ The open-source SKU-110K dataset contains 11,743 images of dense retail shelves,
 | **Stage 1 YOLO Training**| **DONE** | `runs/detect/sku_stage1/weights/best.pt`| **91.05% mAP@50**, 40 epochs on RTX 4060 GPU. |
 | **Stage 2 Shelf Fine-tune**| **WAITING**| `PROGRESS.md`, `dataset/data.yaml` | Stopped per protocol to wait for custom dataset. |
 | **Physical ESP32 Mount**| **IN PROGRESS**| `esp32-firmware/src/main.cpp` | Firmware written; currently tested via camera agent. |
+| **Trained Model Integration**| **DONE** | `backend/inference/detect.py`, `backend/app.py` | Loaded once at startup from MODEL_PATH, GPU accelerated (RTX 4060), dynamic model.names, GET /model-info. |
+| **Demo Studio & Gallery** | **DONE** | `dashboard/src/pages/DemoView.jsx`, `backend/demo_samples/` | 24 unseen test samples from SKU-110K test split, side-by-side view, live slider, isolated from history. |
+| **Pluggable Camera Layer** | **DONE** | `backend/camera/` | Unified get_photo() interface for Simulated, ESP32-CAM (pull/push), and video. 3-photo confirmation filter. |
+| **ESP32 Firmware & Kit** | **DONE** | `esp32-firmware/shelf_camera/`, `docs/ESP32_SWITCHOVER.md` | Full Arduino C++ firmware, verification script, image collector, switchover checklist. |
+| **Phase 10 Tests & Benchmarks**| **PARTLY DONE (Unverified)**| `backend/tests/test_phase10.py` | 6/9 tests passing; virtual clock timing assertion and network mock pending. Latency benchmark & screenshots pending. |
 
 ---
 
@@ -604,7 +609,8 @@ Being 100% transparent about limitations impresses examiners far more than prete
 #### Pre-Demo Checklist (The Night Before & 10 Minutes Before)
 - [ ] Run pytest: `& "d:\projectenv\Scripts\python.exe" -m pytest "d:\project\smart shelfackend	ests"` (Confirm 37/37 pass).
 - [ ] Build dashboard: `cd "d:\project\smart shelf\dashboard" && npm run build` (Confirm 0 errors).
-- [ ] Check weights exist: `D:\project\smart shelfuns\detect\sku_stage1\weightsest.pt`.
+- [ ] Check weights exist: `D:\project\smart shelf
+uns\detect\sku_stage1\weightsest.pt`.
 - [ ] Check demo files exist: `backend/sample_data/test_frame.jpg` and `backend/sample_data/sample_shelf.mp4`.
 - [ ] Keep browser window open at `http://localhost:5173`.
 
@@ -742,7 +748,8 @@ Try answering these 10 questions before checking the answers at the end:
 ### Step 1: Start Backend Server
 Run the backend startup script from the project root:
 ```powershell
-& "d:\project\smart shelf\scriptsun_backend.bat"
+& "d:\project\smart shelf\scripts
+un_backend.bat"
 ```
 - **What you should see**: The terminal window opens, selects Python from `d:\projectenv\Scripts\python.exe`, loads the YOLO model onto the GPU, connects to MongoDB (or activates in-memory fallback), and outputs:
   ```
@@ -752,7 +759,8 @@ Run the backend startup script from the project root:
 ### Step 2: Start Frontend Dashboard
 Open a second terminal window and start the Vite dev server:
 ```powershell
-& "d:\project\smart shelf\scriptsun_frontend.bat"
+& "d:\project\smart shelf\scripts
+un_frontend.bat"
 ```
 - **What you should see**: Vite compiles the React modules in ~250 ms and outputs:
   ```
@@ -799,4 +807,5 @@ Open a second terminal window and start the Vite dev server:
 
 ## 15. Change log
 
+- **2026-10-22 (Phase 10 In Progress - WIP Checkpoint)**: Integrated Stage 1 trained YOLO detector into backend with GPU support and /model-info endpoint. Built interactive Demo Studio (/demo) with 24 unseen test samples and side-by-side annotated visualization. Implemented pluggable camera abstraction layer (backend/camera/) with 4 simulated scenarios, virtual clock pacing, and 3-photo confirmation filter. Authored ESP32-CAM firmware (esp32-firmware/shelf_camera/) and switchover documentation (docs/ESP32_SWITCHOVER.md). Marked Phase 10 test suite and latency benchmarks as unverified pending completion.
 - **2026-10-22**: Created comprehensive `docs/PROJECT_EXPLAINED.md` study guide and presentation companion. Formatted all 15 sections in plain language, added real measured data from pipeline trace (`val_1.jpg`) and Stage 1 training results (`91.05% mAP@50`), and structured examiner questions and team presentation divisions.

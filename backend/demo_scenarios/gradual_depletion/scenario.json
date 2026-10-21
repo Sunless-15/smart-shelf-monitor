@@ -1,0 +1,26 @@
+{
+  "title": "Gradual Shelf Depletion",
+  "description": "20-frame sequence demonstrating progressive product consumption from 100% full shelf down to low stock and completely empty. Used to showcase shortage prediction forecasting (minutes to depletion) and consecutive alert triggering (Low -> Empty).",
+  "interval": 5.0,
+  "loop": true,
+  "total_frames": 20,
+  "source": "Constructed sequence from SKU-110K unseen test split (test_11.jpg)",
+  "expected_timeline": [
+    {
+      "frames": "001-004",
+      "status": "Healthy (100% stock)"
+    },
+    {
+      "frames": "005-011",
+      "status": "Depleting (75% -> 40% stock)"
+    },
+    {
+      "frames": "012-016",
+      "status": "Low Stock (25% -> 15% stock, triggers Low Stock Alert)"
+    },
+    {
+      "frames": "017-020",
+      "status": "Empty Shelf (5% -> 0% stock, triggers Empty Shelf Alert)"
+    }
+  ]
+}

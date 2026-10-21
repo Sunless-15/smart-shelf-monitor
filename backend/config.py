@@ -59,6 +59,22 @@ class Config:
     
     # Video Source Defaults
     # Types: "agent", "webcam", "video", "stream"
+    # Detection Thresholds & Model Customization
+    IOU_THRESHOLD = float(os.getenv("IOU_THRESHOLD", "0.45"))
+    
+    # Camera Layer & ESP32 Configuration
+    # Modes: "simulated", "esp32_pull", "esp32_push", "video_file"
+    CAMERA_MODE = os.getenv("CAMERA_MODE", "simulated").lower().strip()
+    ESP32_IP = os.getenv("ESP32_IP", "192.168.1.100")
+    CAPTURE_INTERVAL_SECONDS = float(os.getenv("CAPTURE_INTERVAL_SECONDS", "5.0"))
+    CAMERA_API_KEY = os.getenv("CAMERA_API_KEY", os.getenv("AGENT_API_KEY", "shelf_agent_secret_key_2026"))
+    ACTIVE_SCENARIO = os.getenv("ACTIVE_SCENARIO", "gradual_depletion")
+    PLAYBACK_SPEED = float(os.getenv("PLAYBACK_SPEED", "1.0"))
+
+    # Demo Directories
+    DEMO_SAMPLES_DIR = BACKEND_DIR / "demo_samples"
+    DEMO_SCENARIOS_DIR = BACKEND_DIR / "demo_scenarios"
+
     DEFAULT_SOURCE_TYPE = os.getenv(
         "DEFAULT_SOURCE_TYPE", 
         "agent" if IS_CLOUD else "video"
@@ -88,7 +104,9 @@ class Config:
             cls.OUTPUTS_DIR, 
             cls.MODELS_DIR, 
             cls.SAMPLE_DATA_DIR, 
-            cls.DATA_DIR
+            cls.DATA_DIR,
+            cls.DEMO_SAMPLES_DIR,
+            cls.DEMO_SCENARIOS_DIR
         ]:
             folder.mkdir(parents=True, exist_ok=True)
 

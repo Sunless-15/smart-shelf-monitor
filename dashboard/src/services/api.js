@@ -171,3 +171,72 @@ export const getMetrics = async () => {
   const res = await apiClient.get('/metrics');
   return res.data;
 };
+
+// -----------------------------------------------------------------------------
+// Phase 10: Model Info, Demo Studio & Camera Abstraction APIs
+// -----------------------------------------------------------------------------
+
+export const getModelInfo = async () => {
+  const res = await apiClient.get('/model-info');
+  return res.data;
+};
+
+export const updateModelConfig = async (thresholds) => {
+  const res = await apiClient.post('/model-config', thresholds);
+  return res.data;
+};
+
+export const getDemoSamples = async () => {
+  const res = await apiClient.get('/demo/samples');
+  return res.data;
+};
+
+export const analyzeDemoSample = async (sampleId, options = {}) => {
+  const res = await apiClient.post(`/demo/analyze-sample/${sampleId}`, options);
+  return res.data;
+};
+
+export const analyzeUploadedImage = async (formDataOrFile, options = {}) => {
+  let body = formDataOrFile;
+  let headers = {};
+  if (formDataOrFile instanceof File) {
+    const fd = new FormData();
+    fd.append('image', formDataOrFile);
+    if (options.confidence) fd.append('confidence', options.confidence);
+    if (options.iou) fd.append('iou', options.iou);
+    body = fd;
+    headers['Content-Type'] = 'multipart/form-data';
+  }
+  const res = await apiClient.post('/analyze-image', body, {
+    headers,
+    params: options
+  });
+  return res.data;
+};
+
+export const importDemoSample = async (formData) => {
+  const res = await apiClient.post('/demo/import', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  });
+  return res.data;
+};
+
+export const getCameraStatus = async () => {
+  const res = await apiClient.get('/camera/status');
+  return res.data;
+};
+
+export const switchCameraMode = async (mode, extra = {}) => {
+  const res = await apiClient.post('/camera/mode', { mode, ...extra });
+  return res.data;
+};
+
+export const controlCamera = async (action, extra = {}) => {
+  const res = await apiClient.post('/camera/control', { action, ...extra });
+  return res.data;
+};
+
+export const clearSimulatedData = async () => {
+  const res = await apiClient.post('/camera/clear-simulated');
+  return res.data;
+};

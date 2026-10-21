@@ -226,6 +226,37 @@ export default function Sidebar({
             </div>
           </div>
 
+          {/* Try It / Demo Studio Nav Item */}
+          <div 
+            onClick={() => setCurrentTab('demo')}
+            style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'space-between',
+              padding: '10px 14px',
+              borderRadius: 'var(--radius-pill)',
+              color: currentTab === 'demo' ? 'var(--accent-lime)' : 'var(--text-secondary)',
+              cursor: 'pointer',
+              fontSize: '0.9rem',
+              fontWeight: 600
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <Sparkles size={18} />
+              <span>Try It / Demo</span>
+            </div>
+            <span style={{
+              background: 'rgba(228, 255, 26, 0.15)',
+              color: 'var(--accent-lime)',
+              fontSize: '0.68rem',
+              padding: '2px 6px',
+              borderRadius: '10px',
+              fontWeight: 700
+            }}>
+              NEW
+            </span>
+          </div>
+
           {/* Upload Video Nav Item */}
           <div 
             onClick={() => setCurrentTab('upload')}

@@ -1,0 +1,32 @@
+// ============================================================================
+// ShelfSense ESP32-CAM Configuration
+// Copy this file to config.h and fill in your WiFi and PC server details.
+// DO NOT commit config.h to git (it is listed in .gitignore).
+// ============================================================================
+
+#ifndef CONFIG_H
+#define CONFIG_H
+
+// 1. WiFi Network Credentials
+const char* WIFI_SSID     = "YOUR_WIFI_SSID";
+const char* WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
+
+// 2. Camera Hardware Resolution & Compression
+// Supported framesizes: FRAMESIZE_VGA (640x480), FRAMESIZE_SVGA (800x600), FRAMESIZE_XGA (1024x768)
+// Recommended for retail shelves: FRAMESIZE_SVGA or FRAMESIZE_VGA
+#define CAMERA_FRAME_SIZE FRAMESIZE_SVGA
+// JPEG Quality: 10-63 (Lower number = higher quality & larger file. 12 is optimal balance)
+#define CAMERA_JPEG_QUALITY 12
+
+// 3. Operational Mode
+// PULL mode (default): PC server requests http://<ESP32_IP>/capture every 5s.
+// PUSH mode: ESP32 autonomously sends HTTP POST to http://<PC_IP>:5000/ingest-photo
+#define ENABLE_PUSH_MODE false
+const char* SERVER_PUSH_URL = "http://192.168.1.100:5000/ingest-photo";
+const char* CAMERA_API_KEY  = "shelf_camera_secret_key_2026";
+#define PUSH_INTERVAL_MS 5000
+
+// 4. Onboard LED Flash Pin (GPIO 4 on AI-Thinker). Default FALSE to prevent glare.
+#define ENABLE_FLASH_LED false
+
+#endif // CONFIG_H

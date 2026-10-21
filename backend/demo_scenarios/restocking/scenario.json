@@ -1,0 +1,8 @@
+{
+  "title": "Shelf Restocking",
+  "description": "10-frame sequence showing a depleted shelf (photos 001-004) followed by store associate refill to 100% capacity (photos 005-010). Demonstrates automatic clearing of active alerts and linear prediction trend reset.",
+  "interval": 5.0,
+  "loop": true,
+  "total_frames": 10,
+  "source": "Sequence alternating depleted and full SKU-110K test split frames"
+}
