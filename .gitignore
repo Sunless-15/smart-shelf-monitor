@@ -1,4 +1,4 @@
-# Python
+﻿# Python
 __pycache__/
 *.py[cod]
 *$py.class
@@ -29,6 +29,12 @@ backend/uploads/*
 backend/outputs/*
 !backend/outputs/.gitkeep
 backend/sample_data/*.jpg
+
+# Datasets and training weights
+datasets/
+dataset_sku_subset/
+*.tar.gz
+*.pt
 
 # System & IDE
 .DS_Store

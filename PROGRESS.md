@@ -11,14 +11,19 @@ We are building the "ShelfSense" (Intelligent Empty Shelf, Low Stock, and Mispla
 5. Continue from "Current task". Do not redo work marked DONE unless it is broken.
 
 ## Current task
-Phase 9: YOLO training - Step 1: Get SKU-110K and build subset
-- Step 0 completed: CUDA 12.6 PyTorch (2.14.1+cu126, torchvision 0.29.1+cu126) verified with NVIDIA GeForce RTX 4060 Laptop GPU (8 GB VRAM). Ultralytics 8.4.161 verified. Free disk space on drive D is 149.6 GB.
-- Starting Step 1: Downloading SKU-110K via Ultralytics dataset loader into D:/project/smart shelf/datasets/SKU-110K.
-- After download: Will construct dataset_sku_subset (1,500 train images, 300 val images, filtered for 10-100 boxes if applicable, seed 42) with single class 0: product, write data.yaml, validate, and generate docs/sku_subset_report.md.
+Phase 9: YOLO training - Step 2: Stage 1 training (products)
+- Stage 1 model training initiated on SKU-110K subset (`dataset_sku_subset/data.yaml`).
+- Model: `yolov8s.pt`
+- Run name: `sku_stage1`
+- Start time: 2026-10-21 22:58
+- Output directory: `D:/project/smart shelf/runs/detect/sku_stage1`
+- Exact command: `& "D:\project\venv\Scripts\yolo.exe" detect train data="D:/project/smart shelf/dataset_sku_subset/data.yaml" model=yolov8s.pt epochs=40 imgsz=640 batch=16 patience=10 name=sku_stage1 workers=0` (logging to `training_stage1.log`).
+- Training parameters: epochs=40, imgsz=640, batch=16 (or 8 if VRAM OOM), patience=10, workers=0 (for Windows process stability).
+- Background process monitored via `training_stage1.log`.
 
 ## Next steps (in order)
 - [x] Step 0: Install CUDA-enabled PyTorch into venv, verify GPU detection and ultralytics (DONE)
-- [ ] Step 1: Download SKU-110K, build 1,500 train / 300 val subset with data.yaml, generate docs/sku_subset_report.md
+- [x] Step 1: Download SKU-110K, build 1,500 train / 300 val subset with data.yaml, generate docs/sku_subset_report.md (DONE)
 - [ ] Step 2: Stage 1 training (products) on SKU-110K subset with yolov8s.pt in background, monitor & report metrics
 - [ ] Step 3: Check custom shelf dataset for Stage 2 (classes: product, empty_slot); wait or configure splits
 - [ ] Step 4: Stage 2 training (fine-tune shelf_v1 from Stage 1 best.pt)
@@ -38,6 +43,7 @@ Phase 9: YOLO training - Step 1: Get SKU-110K and build subset
 - [ ] Phase 9: YOLO training (Two-stage SKU-110K subset & shelf fine-tuning, evaluation, backend integration)
 
 ## Completed work log
+- 2026-10-21 22:55: Completed Phase 9 Step 1: Downloaded full SKU-110K dataset (11.4 GB archive, 11,743 images / labels). Analyzed box distributions across 8,219 train and 588 val images (median 138 boxes; only 384 train and 18 val images had 10-100 boxes). Evaluated filter and executed plain random sampling with seed 42 to avoid dataset starvation. Generated `dataset_sku_subset` with 1,500 train images (220,632 product boxes, avg 147.1/img) and 300 val images (45,860 product boxes, avg 152.9/img). Validated 0 corrupt images, 0 missing labels, 0 non-zero class IDs, and normalized coordinates. Created `data.yaml` and published comprehensive audit report in `docs/sku_subset_report.md`. (Files: dataset_sku_subset/data.yaml, docs/sku_subset_report.md, scripts/create_sku_subset.py, scripts/download_sku.py, .gitignore, PROGRESS.md)
 - 2026-10-21 20:40: Completed Phase 9 Step 0: Verified hardware and environment. Resolved CPU PyTorch limitation by installing CUDA 12.6 PyTorch build (torch 2.14.1+cu126, torchvision 0.29.1+cu126) in d:\\project\\venv. Verified torch.cuda.is_available() == True, GPU name: NVIDIA GeForce RTX 4060 Laptop GPU (8188 MiB VRAM), Ultralytics 8.4.161. Verified 149.6 GB disk space available on drive D. Configured ultralytics datasets_dir to D:/project/smart shelf/datasets. (Files: PROGRESS.md)
 - 2026-10-17 14:28: Resolved login connection issue: Terminated stale backend background process running pre-auth codebase, restarted Flask with live `/login` endpoint and JWT session token generation, relaxed local dev CORS policy (`origins: "*"`), and made `API_BASE` dynamically match current browser protocol & host. Verified 37/37 pytest test suite passes and login succeeds with HTTP 200. (Files: backend/app.py, backend/tests/test_e2e_live.py, dashboard/src/services/api.js, PROGRESS.md)
 - 2026-10-17 14:15: Completed Phase 8 UI Redesign: Built dark-first bento grid dashboard with neon-lime (#E4FF1A) signature accent, mixed dark/white/lime card rhythm, 24-28px radius, pill buttons and segmented tabs, floating rounded sidebar with expandable Overview card, 4-row bento dashboard layout (greeting header with tall '+' button + white and lime stat cards, shelf status half-donut chart with lime total bubble, alerts bar chart with diagonal hatched bar on lime card, live annotated camera feed card with LIVE & FPS pills, wide white alert card with View Zone / Acknowledge pills, and dark rounded shelf zones table with route connector dots and pill filter tabs). Updated all secondary views and modals. Tested and confirmed 37/37 pytest test suite passes and Vite production build compiles with 0 errors. (Files: dashboard/src/index.css, dashboard/src/App.jsx, dashboard/src/pages/LiveDashboard.jsx, dashboard/src/components/Sidebar.jsx, dashboard/src/components/BottomNav.jsx, dashboard/src/components/Header.jsx, dashboard/src/components/LoginModal.jsx, dashboard/src/pages/AlertsView.jsx, dashboard/src/pages/AnalyticsView.jsx, dashboard/src/pages/VideoUploadView.jsx, dashboard/src/pages/ZonesSettingsView.jsx, dashboard/index.html, PROGRESS.md)
