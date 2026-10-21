@@ -1,0 +1,8 @@
+﻿path: D:/project/smart shelf/dataset
+train: images/train
+val: images/val
+test: images/test
+
+names:
+  0: product
+  1: empty_slot

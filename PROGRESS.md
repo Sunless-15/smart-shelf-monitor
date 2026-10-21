@@ -11,22 +11,29 @@ We are building the "ShelfSense" (Intelligent Empty Shelf, Low Stock, and Mispla
 5. Continue from "Current task". Do not redo work marked DONE unless it is broken.
 
 ## Current task
-Phase 9: YOLO training - Step 2: Stage 1 training (products)
-- Stage 1 model training initiated on SKU-110K subset (`dataset_sku_subset/data.yaml`).
-- Model: `yolov8s.pt`
-- Run name: `sku_stage1`
-- Start time: 2026-10-21 22:58
-- Output directory: `D:/project/smart shelf/runs/detect/sku_stage1`
-- Exact command: `& "D:\project\venv\Scripts\yolo.exe" detect train data="D:/project/smart shelf/dataset_sku_subset/data.yaml" model=yolov8s.pt epochs=40 imgsz=640 batch=16 patience=10 name=sku_stage1 workers=0` (logging to `training_stage1.log`).
-- Training parameters: epochs=40, imgsz=640, batch=16 (or 8 if VRAM OOM), patience=10, workers=0 (for Windows process stability).
-- Background process monitored via `training_stage1.log`.
+Phase 9: YOLO training - Stage 2: Waiting for user labeled dataset
+- Stage 1 training (products) COMPLETED with real measured metrics:
+  - Architecture: YOLOv8s on NVIDIA GeForce RTX 4060 Laptop GPU (8 GB VRAM).
+  - Training time: 40 epochs completed in 1.116 hours (4,017.7s).
+  - Validation metrics (SKU-110K subset): Precision: 90.92%, Recall: 84.90%, mAP@50: 91.05%, mAP@50-95: 55.36%.
+  - Weights saved: `runs/detect/sku_stage1/weights/best.pt` (22.5 MB).
+  - Results report created: `docs/training_results.md`.
+- Status: STOPPED after Stage 1 as mandated by Step 3.1: Custom shelf dataset with labeled images does not exist yet (`dataset/` contains no annotations). No data was fabricated or auto-labeled.
+- What is needed to proceed to Stage 2:
+  1. Provide labeled shelf images in `D:\project\smart shelf\dataset\` with YOLO structure:
+     - `images/train/`, `images/val/`, `images/test/`
+     - `labels/train/`, `labels/val/`, `labels/test/`
+  2. Annotated classes (in YOLO `.txt` format):
+     - `0: product`
+     - `1: empty_slot`
+  3. `dataset/data.yaml` has already been configured with absolute paths and these exact class names.
 
 ## Next steps (in order)
 - [x] Step 0: Install CUDA-enabled PyTorch into venv, verify GPU detection and ultralytics (DONE)
 - [x] Step 1: Download SKU-110K, build 1,500 train / 300 val subset with data.yaml, generate docs/sku_subset_report.md (DONE)
-- [ ] Step 2: Stage 1 training (products) on SKU-110K subset with yolov8s.pt in background, monitor & report metrics
-- [ ] Step 3: Check custom shelf dataset for Stage 2 (classes: product, empty_slot); wait or configure splits
-- [ ] Step 4: Stage 2 training (fine-tune shelf_v1 from Stage 1 best.pt)
+- [x] Step 2: Stage 1 training (products) on SKU-110K subset with yolov8s.pt in background, monitor & report metrics (DONE)
+- [ ] Step 3: Waiting for user labeled shelf dataset (classes: 0 product, 1 empty_slot)
+- [ ] Step 4: Stage 2 training (fine-tune shelf_v1 from runs/detect/sku_stage1/weights/best.pt)
 - [ ] Step 5: Honest evaluation on test split, confusion matrix, sample predictions to docs/sample_predictions/ and docs/training_results.md
 - [ ] Step 6: Plug shelf_v1.pt into backend, integrate empty_slot logic into stock engine, verify pytest suite
 - [ ] Step 7: Update PROGRESS.md and project docs with final measured numbers
@@ -43,6 +50,7 @@ Phase 9: YOLO training - Step 2: Stage 1 training (products)
 - [ ] Phase 9: YOLO training (Two-stage SKU-110K subset & shelf fine-tuning, evaluation, backend integration)
 
 ## Completed work log
+- 2026-10-22 00:15: Completed Phase 9 Step 2: Trained Stage 1 YOLOv8s detector on SKU-110K subset (`dataset_sku_subset/data.yaml`) for 40 epochs on NVIDIA GeForce RTX 4060 Laptop GPU. Achieved final measured validation performance: Precision 90.92%, Recall 84.90%, mAP@50 91.05%, mAP@50-95 55.36%, final train box_loss 1.2916, cls_loss 0.5514, dfl_loss 0.9607 in 1.116 hours (4,017.7s) at 4.9ms inference per image. Saved optimal model weights to `runs/detect/sku_stage1/weights/best.pt` (22.5 MB). Created `docs/training_results.md` documenting two-stage architecture rationale, hardware configuration, and epoch progression. Created `dataset/data.yaml` for Stage 2. Stopped after Stage 1 per Step 3 instructions to wait for user's custom labeled dataset with classes `0: product` and `1: empty_slot`. (Files: runs/detect/sku_stage1/weights/best.pt, docs/training_results.md, dataset/data.yaml, PROGRESS.md)
 - 2026-10-21 22:55: Completed Phase 9 Step 1: Downloaded full SKU-110K dataset (11.4 GB archive, 11,743 images / labels). Analyzed box distributions across 8,219 train and 588 val images (median 138 boxes; only 384 train and 18 val images had 10-100 boxes). Evaluated filter and executed plain random sampling with seed 42 to avoid dataset starvation. Generated `dataset_sku_subset` with 1,500 train images (220,632 product boxes, avg 147.1/img) and 300 val images (45,860 product boxes, avg 152.9/img). Validated 0 corrupt images, 0 missing labels, 0 non-zero class IDs, and normalized coordinates. Created `data.yaml` and published comprehensive audit report in `docs/sku_subset_report.md`. (Files: dataset_sku_subset/data.yaml, docs/sku_subset_report.md, scripts/create_sku_subset.py, scripts/download_sku.py, .gitignore, PROGRESS.md)
 - 2026-10-21 20:40: Completed Phase 9 Step 0: Verified hardware and environment. Resolved CPU PyTorch limitation by installing CUDA 12.6 PyTorch build (torch 2.14.1+cu126, torchvision 0.29.1+cu126) in d:\\project\\venv. Verified torch.cuda.is_available() == True, GPU name: NVIDIA GeForce RTX 4060 Laptop GPU (8188 MiB VRAM), Ultralytics 8.4.161. Verified 149.6 GB disk space available on drive D. Configured ultralytics datasets_dir to D:/project/smart shelf/datasets. (Files: PROGRESS.md)
 - 2026-10-17 14:28: Resolved login connection issue: Terminated stale backend background process running pre-auth codebase, restarted Flask with live `/login` endpoint and JWT session token generation, relaxed local dev CORS policy (`origins: "*"`), and made `API_BASE` dynamically match current browser protocol & host. Verified 37/37 pytest test suite passes and login succeeds with HTTP 200. (Files: backend/app.py, backend/tests/test_e2e_live.py, dashboard/src/services/api.js, PROGRESS.md)
