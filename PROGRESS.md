@@ -11,32 +11,22 @@ We are building the "ShelfSense" (Intelligent Empty Shelf, Low Stock, and Mispla
 5. Continue from "Current task". Do not redo work marked DONE unless it is broken.
 
 ## Current task
-Phase 9: YOLO training - Stage 2: Waiting for user labeled dataset
-- Stage 1 training (products) COMPLETED with real measured metrics:
-  - Architecture: YOLOv8s on NVIDIA GeForce RTX 4060 Laptop GPU (8 GB VRAM).
-  - Training time: 40 epochs completed in 1.116 hours (4,017.7s).
-  - Validation metrics (SKU-110K subset): Precision: 90.92%, Recall: 84.90%, mAP@50: 91.05%, mAP@50-95: 55.36%.
-  - Weights saved: `runs/detect/sku_stage1/weights/best.pt` (22.5 MB).
-  - Results report created: `docs/training_results.md`.
-- Status: STOPPED after Stage 1 as mandated by Step 3.1: Custom shelf dataset with labeled images does not exist yet (`dataset/` contains no annotations). No data was fabricated or auto-labeled.
-- What is needed to proceed to Stage 2:
-  1. Provide labeled shelf images in `D:\project\smart shelf\dataset\` with YOLO structure:
-     - `images/train/`, `images/val/`, `images/test/`
-     - `labels/train/`, `labels/val/`, `labels/test/`
-  2. Annotated classes (in YOLO `.txt` format):
-     - `0: product`
-     - `1: empty_slot`
-  3. `dataset/data.yaml` has already been configured with absolute paths and these exact class names.
+Phase 10: trained model in web app + demo mode + ESP32-ready camera layer
+- Part A: Check trained weights (shelf_v1.pt, sku_stage1.pt, or fallback yolov8n.pt), read dynamic class names from model.names, expose GET /model-info, make conf/IoU thresholds adjustable from Settings, implement two-class product/empty_slot zone counting logic.
+- Part B: Build Demo Image Feature (/demo page) with file upload, sample gallery (ackend/demo_samples/ with 20-30 unseen test images from SKU-110K test split), POST /demo/import, POST /analyze-image, GET /demo/samples, POST /demo/analyze-sample/<id>, side-by-side view with confidence slider, zone cards, raw detections, latency, and plain caption.
+- Part C: Build unified camera layer (ackend/camera/) with common interface get_photo() -> (jpeg_bytes, timestamp, camera_id) supporting interchangeable sources (simulated, esp32_pull, esp32_push, ideo_file). Implement simulated scenarios (gradual_depletion, customer_blocking, 
+estocking, misplaced_item) with virtual clock (5s spacing) and simulated=true metadata flag. Add live demo badge, camera control panel, and live pipeline trace card.
+- Part D: ESP32-CAM switch-over kit (esp32-firmware/shelf_camera/shelf_camera.ino, ackend/tools/test_esp32.py, ackend/tools/collect_images.py, docs/ESP32_SWITCHOVER.md, fake ESP32 pytest integration).
+- Part E: Automated pytest tests, mobile responsive test, screenshots in docs/screenshots/, and measured performance in docs/performance.md.
+- Part F: Update README.md, PROGRESS.md, and docs/PROJECT_EXPLAINED.md.
 
 ## Next steps (in order)
-- [x] Step 0: Install CUDA-enabled PyTorch into venv, verify GPU detection and ultralytics (DONE)
-- [x] Step 1: Download SKU-110K, build 1,500 train / 300 val subset with data.yaml, generate docs/sku_subset_report.md (DONE)
-- [x] Step 2: Stage 1 training (products) on SKU-110K subset with yolov8s.pt in background, monitor & report metrics (DONE)
-- [ ] Step 3: Waiting for user labeled shelf dataset (classes: 0 product, 1 empty_slot)
-- [ ] Step 4: Stage 2 training (fine-tune shelf_v1 from runs/detect/sku_stage1/weights/best.pt)
-- [ ] Step 5: Honest evaluation on test split, confusion matrix, sample predictions to docs/sample_predictions/ and docs/training_results.md
-- [ ] Step 6: Plug shelf_v1.pt into backend, integrate empty_slot logic into stock engine, verify pytest suite
-- [ ] Step 7: Update PROGRESS.md and project docs with final measured numbers
+- [ ] Part A: Inspect model weights, implement dynamic class loading, /model-info, threshold config, and two-class zone logic
+- [ ] Part B: Create backend/demo_samples/ from test split, demo endpoints (/analyze-image, /demo/samples), and React Demo page
+- [ ] Part C: Implement backend/camera/ abstraction (simulated, esp32_pull, esp32_push, video_file), scenario runner with virtual clock, pipeline trace card, and demo banner
+- [ ] Part D: Build ESP32 firmware, test_esp32.py, collect_images.py, fake-ESP32 pull test, and docs/ESP32_SWITCHOVER.md
+- [ ] Part E: Write comprehensive test suite, verify browser UI at 375px/desktop, take screenshots, measure latency
+- [ ] Part F: Update README.md, PROGRESS.md, and docs/PROJECT_EXPLAINED.md
 
 ## Phase checklist
 - [x] Phase 1: Backend skeleton, config, DB layer, video source layer (DONE)
@@ -48,6 +38,7 @@ Phase 9: YOLO training - Stage 2: Waiting for user labeled dataset
 - [x] Phase 7: Public deployment (cloud-ready backend, camera agent, auth, Vercel/Render/Atlas configs, DEPLOYMENT.md) (DONE)
 - [x] Phase 8: Bento Grid UI Redesign (Neon-Lime accent, floating sidebar, mixed white/lime/dark cards, half-donut & hatched bar charts, mobile pill bar) (DONE)
 - [ ] Phase 9: YOLO training (Two-stage SKU-110K subset & shelf fine-tuning, evaluation, backend integration)
+- [ ] Phase 10: trained model in web app + demo mode + ESP32-ready camera layer
 
 ## Completed work log
 - 2026-10-22 00:55: Authored comprehensive study guide and presentation companion `docs/PROJECT_EXPLAINED.md` covering all 15 structured sections in plain English (pitches, real photo journey trace on val_1.jpg with 186 products, 13 detailed component mechanisms with worked examples and code walkthroughs, design decisions matrix, Stage 1 YOLO training results with 91.05% mAP@50 on RTX 4060 GPU, honest status and limitations, 11-slide presentation outline, team role division, live demo script, recovery plan, 20 examiner Q&As with deeper answers, 10 self-test questions, folder map, verified run instructions, and glossary). Added Rule 10 to `AGENT_RULES.md` to keep `docs/PROJECT_EXPLAINED.md` updated alongside `PROGRESS.md`. (Files: docs/PROJECT_EXPLAINED.md, AGENT_RULES.md, PROGRESS.md)
