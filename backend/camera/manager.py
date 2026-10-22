@@ -23,7 +23,7 @@ class CameraManager:
     """Singleton managing active camera hardware/simulation source."""
 
     def __init__(self):
-        self._lock = threading.Lock()
+        self._lock = threading.RLock()
         self.mode: str = Config.CAMERA_MODE.lower()
 
         self.simulated_source = SimulatedSource()
@@ -56,12 +56,12 @@ class CameraManager:
             self.mode = mode_clean
             Config.CAMERA_MODE = mode_clean
 
-            if mode_clean == "esp32_pull" and "esp32_ip" in kwargs:
+            if mode_clean == "esp32_pull" and kwargs.get("esp32_ip"):
                 self.esp32_pull_source.set_ip(kwargs["esp32_ip"])
             elif mode_clean == "simulated":
-                if "scenario" in kwargs:
+                if kwargs.get("scenario"):
                     self.simulated_source.set_scenario(kwargs["scenario"])
-                if "speed" in kwargs:
+                if kwargs.get("speed") is not None:
                     self.simulated_source.set_speed(float(kwargs["speed"]))
 
             logger.info(f"CameraManager switched mode to: {self.mode}")
@@ -77,10 +77,10 @@ class CameraManager:
         elif action_clean == "reset":
             self.simulated_source.reset()
         elif action_clean == "set_scenario":
-            if "scenario" in kwargs:
+            if kwargs.get("scenario"):
                 self.simulated_source.set_scenario(kwargs["scenario"])
         elif action_clean == "set_speed":
-            if "speed" in kwargs:
+            if kwargs.get("speed") is not None:
                 self.simulated_source.set_speed(float(kwargs["speed"]))
         else:
             raise ValueError(f"Unknown simulated control action: {action}")

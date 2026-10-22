@@ -520,7 +520,7 @@ The open-source SKU-110K dataset contains 11,743 images of dense retail shelves,
 | **Demo Studio & Gallery** | **DONE** | `dashboard/src/pages/DemoView.jsx`, `backend/demo_samples/` | 24 unseen test samples from SKU-110K test split, side-by-side view, live slider, isolated from history. |
 | **Pluggable Camera Layer** | **DONE** | `backend/camera/` | Unified get_photo() interface for Simulated, ESP32-CAM (pull/push), and video. 3-photo confirmation filter. |
 | **ESP32 Firmware & Kit** | **DONE** | `esp32-firmware/shelf_camera/`, `docs/ESP32_SWITCHOVER.md` | Full Arduino C++ firmware, verification script, image collector, switchover checklist. |
-| **Phase 10 Tests & Benchmarks**| **PARTLY DONE (Unverified)**| `backend/tests/test_phase10.py` | 6/9 tests passing; virtual clock timing assertion and network mock pending. Latency benchmark & screenshots pending. |
+| **Phase 10 Tests** | **DONE** | `backend/tests/test_phase10.py` | 9/9 tests passing (45 passed, 1 skipped across full suite in 12.4s). Virtual clock and mode switch verified. |
 
 ---
 

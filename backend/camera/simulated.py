@@ -1,4 +1,4 @@
-﻿"""Simulated Camera Source with Scenario Playback and Virtual Clock.
+"""Simulated Camera Source with Scenario Playback and Virtual Clock.
 
 Replays ordered JPEG image sequences from backend/demo_scenarios/<scenario_name>/.
 Features:
@@ -102,9 +102,9 @@ class SimulatedSource(CameraSource):
             self._load_scenario(name)
 
     def set_speed(self, multiplier: float):
-        """Update playback speed multiplier (e.g. 1.0, 5.0, 10.0)."""
+        """Update playback speed multiplier (e.g. 1.0, 5.0, 10.0, 100.0)."""
         with self._lock:
-            self.speed_multiplier = max(0.1, min(50.0, float(multiplier)))
+            self.speed_multiplier = max(0.1, min(100.0, float(multiplier)))
 
     def pause(self):
         """Pause scenario progression."""
