@@ -12,22 +12,19 @@ We are building the "ShelfSense" (Intelligent Empty Shelf, Low Stock, and Mispla
 
 ### Current task
 Phase 10: trained model in web app + demo mode + ESP32-ready camera layer
-- Working on: Measuring real YOLO inference latency on NVIDIA RTX 4060 GPU for `docs/performance.md`, capturing UI screenshots for `docs/screenshots/`, and updating README / PROJECT_EXPLAINED.
+- Working on: Capturing UI screenshots for `docs/screenshots/` and updating README / PROJECT_EXPLAINED.
 - Files worked on:
-  - `backend/camera/manager.py`: Switched lock to `threading.RLock()` to eliminate reentrancy deadlock on mode switch; safely handled `None` in `kwargs` for speed, esp32_ip, scenario.
-  - `backend/camera/simulated.py`: Permitted speed multiplier up to 100.0x for accelerated testing pacing.
-  - `backend/tests/test_phase10.py`: All 9 tests passing (100% pass).
-  - Full test suite: 45 passed, 1 skipped in 12.39s.
+  - `scripts/benchmark_latency.py`: Automated 20-image latency test across unseen SKU-110K test split on NVIDIA RTX 4060 Laptop GPU.
+  - `docs/performance.md`: Comprehensive benchmark documentation (Mean: 84.68 ms, Median: 83.65 ms, Min: 31.92 ms, Max: 125.65 ms, FPS: 11.8, VRAM: 42.5 MB).
 
 ## Next steps (in order)
-1. Measure real YOLO inference latency averaged over 20 images on the NVIDIA RTX 4060 Laptop GPU and save exact results to `docs/performance.md`.
-2. Launch frontend dev server (`cd dashboard && npm run dev`), open at 375px mobile and desktop widths, and capture the 4 required screenshots into `docs/screenshots/`:
+1. Launch frontend dev server (`cd dashboard && npm run dev`), open at 375px mobile and desktop widths, and capture the 4 required screenshots into `docs/screenshots/`:
    - Demo page with annotated sample
    - Dashboard in DEMO MODE with Low alert and shortage prediction
    - Pipeline trace card showing 3-photo confirmation counter ("Low seen 2 of 3")
    - Customer blocking scenario showing no false alert
-3. Update `README.md` and `docs/PROJECT_EXPLAINED.md` with `CAMERA_MODE` configuration instructions and demo usage.
-4. Commit completed Phase 10 to Git.
+2. Update `README.md` and `docs/PROJECT_EXPLAINED.md` with `CAMERA_MODE` configuration instructions and demo usage.
+3. Commit completed Phase 10 to Git.
 
 ## Phase checklist
 - [x] Phase 1: Backend skeleton, config, DB layer, video source layer (DONE)
@@ -44,10 +41,11 @@ Phase 10: trained model in web app + demo mode + ESP32-ready camera layer
   - [x] Part B: Demo page (24 unseen test samples in backend/demo_samples/, /analyze-image, /demo/*, DemoView.jsx, isolation from live history) (DONE)
   - [x] Part C: Camera layer and scenarios (backend/camera/ with Simulated/Pull/Push/Video, 4 demo scenarios, 3-photo confirmation, DEMO MODE badge) (DONE)
   - [x] Part D: Firmware and switch-over kit (esp32-firmware/shelf_camera/shelf_camera.ino, test_esp32.py, collect_images.py, docs/ESP32_SWITCHOVER.md) (DONE)
-  - [/] Part E: Tests and screenshots (All 9 tests in test_phase10.py passing; 45/46 backend tests passing; screenshots & 20-image latency measurement pending) (PARTLY DONE)
-  - [/] Part F: Documentation (docs/ESP32_SWITCHOVER.md & demo READMEs done; PROGRESS.md, PROJECT_EXPLAINED.md, README.md being updated) (PARTLY DONE)
+  - [/] Part E: Tests and screenshots (All 9 tests in test_phase10.py passing; 45/46 backend tests passing; 20-image latency benchmark measured in docs/performance.md; screenshots pending) (PARTLY DONE)
+  - [/] Part F: Documentation (docs/ESP32_SWITCHOVER.md & demo READMEs done; docs/performance.md done; PROGRESS.md, PROJECT_EXPLAINED.md, README.md being updated) (PARTLY DONE)
 
 ## Completed work log
+- 2026-10-22 06:31: Executed real YOLO inference latency benchmark on host NVIDIA GeForce RTX 4060 Laptop GPU (8GB VRAM, CUDA 12.6, PyTorch 2.14.1+cu126) across 20 unseen test images from SKU-110K. Measured: Mean latency 84.68 ms (~11.8 FPS), Median 83.65 ms, Min 31.92 ms, Max 125.65 ms, Std Dev 20.59 ms, VRAM allocated 42.5 MB. Verified processing consumes only 1.69% of the 5.0-second ESP32 capture interval. Published full breakdown report in `docs/performance.md`. (Files: scripts/benchmark_latency.py, docs/performance.md, docs/PROJECT_EXPLAINED.md, PROGRESS.md)
 - 2026-10-22 06:26: Fixed Phase 10 test suite issues: Resolved reentrancy deadlock in `CameraManager` by upgrading `_lock` to `threading.RLock()` and adding safe `None` checks in `set_mode` / `control_simulated`; updated `SimulatedSource.set_speed` to permit up to 100x playback speed multiplier, ensuring perfect 5.0s timestamp increments under accelerated test loops. Executed full test suite: 45 passed, 1 skipped in 12.39s (100% pass rate). (Files: backend/camera/manager.py, backend/camera/simulated.py, PROGRESS.md)
 - 2026-10-22 03:00: Checkpoint: Saved current progress on Phase 10. Completed implementation of Part A (YOLO model integration with dynamic class reading, GPU acceleration on RTX 4060, GET /model-info, POST /model-config, two-class zone counting with product and empty_slot), Part B (Demo page with 24 unseen SKU-110K test split images, /analyze-image, side-by-side visualization, latency display, isolated history tagging), Part C (Unified camera abstraction layer in backend/camera/ supporting simulated, esp32_pull, esp32_push, video_file; 4 demo scenarios with virtual clock; 3-photo confirmation filter; live pipeline trace card; top demo badge), Part D (AI-Thinker ESP32-CAM firmware in esp32-firmware/, test_esp32.py, collect_images.py, docs/ESP32_SWITCHOVER.md), and created 9 automated tests in backend/tests/test_phase10.py. Verified .gitignore excludes all heavy datasets and secrets. (Files: backend/app.py, backend/config.py, backend/pipeline.py, backend/inference/detect.py, backend/inference/stock.py, backend/camera/*, backend/demo_samples/*, backend/demo_scenarios/*, esp32-firmware/*, backend/tools/*, dashboard/src/pages/DemoView.jsx, dashboard/src/pages/LiveDashboard.jsx, dashboard/src/pages/ZonesSettingsView.jsx, docs/ESP32_SWITCHOVER.md, .gitignore, PROGRESS.md)
 - 2026-10-22 00:55: Authored comprehensive study guide and presentation companion `docs/PROJECT_EXPLAINED.md` covering all 15 structured sections in plain English (pitches, real photo journey trace on val_1.jpg with 186 products, 13 detailed component mechanisms with worked examples and code walkthroughs, design decisions matrix, Stage 1 YOLO training results with 91.05% mAP@50 on RTX 4060 GPU, honest status and limitations, 11-slide presentation outline, team role division, live demo script, recovery plan, 20 examiner Q&As with deeper answers, 10 self-test questions, folder map, verified run instructions, and glossary). Added Rule 10 to `AGENT_RULES.md` to keep `docs/PROJECT_EXPLAINED.md` updated alongside `PROGRESS.md`. (Files: docs/PROJECT_EXPLAINED.md, AGENT_RULES.md, PROGRESS.md)
