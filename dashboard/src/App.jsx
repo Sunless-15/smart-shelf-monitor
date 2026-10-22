@@ -60,7 +60,7 @@ export default function App() {
 
     const checkStatus = async () => {
       try {
-        const [health, alertsData, srcData, camData] = await Promise.all([
+        const [camData, health, alertsData, srcData] = await Promise.all([
           getCameraStatus().catch(() => null),
           getHealth(),
           getAlerts(true, 5),

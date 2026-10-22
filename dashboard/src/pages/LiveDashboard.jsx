@@ -997,9 +997,6 @@ export default function LiveDashboard({ isOnline }) {
           </div>
         )}
       </div>
-    </div>
-  );
-}
 
       {/* Model & Runtime Status Footer */}
       <div style={{
@@ -1026,3 +1023,6 @@ export default function LiveDashboard({ isOnline }) {
           <span>IoU: <strong style={{ color: '#FFFFFF' }}>{modelInfo?.iou_threshold || 0.45}</strong></span>
         </div>
       </div>
+    </div>
+  );
+}

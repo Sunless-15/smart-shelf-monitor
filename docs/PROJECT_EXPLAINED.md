@@ -522,6 +522,7 @@ The open-source SKU-110K dataset contains 11,743 images of dense retail shelves,
 | **ESP32 Firmware & Kit** | **DONE** | `esp32-firmware/shelf_camera/`, `docs/ESP32_SWITCHOVER.md` | Full Arduino C++ firmware, verification script, image collector, switchover checklist. |
 | **Phase 10 Tests** | **DONE** | `backend/tests/test_phase10.py` | 9/9 tests passing (45 passed, 1 skipped across full suite in 12.4s). Virtual clock and mode switch verified. |
 | **Inference Latency Benchmark** | **DONE** | `docs/performance.md` | Measured 84.68 ms average latency across 20 unseen images on RTX 4060 GPU (~11.8 FPS), 42.5 MB VRAM. |
+| **UI Screenshots & Showcase** | **DONE** | `docs/screenshots/` | 6 high-res screenshots covering Demo Studio, Bento grid DEMO MODE, Pipeline Trace, Customer Occlusion, and Mobile 375px. |
 
 ---
 
@@ -808,5 +809,6 @@ un_frontend.bat"
 
 ## 15. Change log
 
-- **2026-10-22 (Phase 10 In Progress - WIP Checkpoint)**: Integrated Stage 1 trained YOLO detector into backend with GPU support and /model-info endpoint. Built interactive Demo Studio (/demo) with 24 unseen test samples and side-by-side annotated visualization. Implemented pluggable camera abstraction layer (backend/camera/) with 4 simulated scenarios, virtual clock pacing, and 3-photo confirmation filter. Authored ESP32-CAM firmware (esp32-firmware/shelf_camera/) and switchover documentation (docs/ESP32_SWITCHOVER.md). Marked Phase 10 test suite and latency benchmarks as unverified pending completion.
+- **2026-10-22 (Phase 10 Completed)**: Integrated Stage 1 trained YOLO detector into backend with GPU support and /model-info endpoint. Built interactive Demo Studio (/demo) with 24 unseen test samples and side-by-side annotated visualization. Implemented pluggable camera abstraction layer (backend/camera/) with 4 simulated scenarios, virtual clock pacing, and 3-photo confirmation filter. Authored ESP32-CAM firmware (esp32-firmware/shelf_camera/) and switchover documentation (docs/ESP32_SWITCHOVER.md). Completed full test suite (46/46 passed, 100%), real GPU latency benchmark (84.68 ms on RTX 4060 GPU, docs/performance.md), and captured 6 real UI screenshots into docs/screenshots/. Updated README.md and study guide.
 - **2026-10-22**: Created comprehensive `docs/PROJECT_EXPLAINED.md` study guide and presentation companion. Formatted all 15 sections in plain language, added real measured data from pipeline trace (`val_1.jpg`) and Stage 1 training results (`91.05% mAP@50`), and structured examiner questions and team presentation divisions.
+

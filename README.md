@@ -151,27 +151,75 @@ The system is configured out of the box for responsive mobile access on the same
 
 ---
 
-## 📷 Pluggable Video Source & ESP32-CAM Setup
+## 📸 System Screenshots & Interface Showcase
 
-The video source layer ([`backend/sources.py`](file:///d:/project/smart%20shelf/backend/sources.py)) supports three interchangeable inputs:
+| Vision Studio & Sandbox (`/demo`) | Bento Grid in DEMO MODE (`/`) |
+|---|---|
+| ![Vision Studio](docs/screenshots/demo_page_annotated.png) | ![Live Dashboard](docs/screenshots/dashboard_demo_mode.png) |
+| *Side-by-side detection on 24 test samples with real-time confidence slider, GPU latency, and caption.* | *Real-time Bento Grid displaying simulated camera warning pill, Low alert toast, half-donut chart, and live stream.* |
 
-| Source Type | Value Example | Description |
-|---|---|---|
-| `webcam` | `0` or `1` | Built-in laptop webcam or external USB camera |
-| `video` | `sample_data/sample_shelf.mp4` | Looped demo video on disk for testing without a camera |
-| `stream` | `http://192.168.1.100:81/stream` | ESP32-CAM HTTP/MJPEG stream endpoint |
+| Pipeline Trace & 3-Photo Filter | Customer Occlusion Handling |
+|---|---|
+| ![Pipeline Trace Card](docs/screenshots/pipeline_trace_card.png) | ![Customer Blocking No False Alert](docs/screenshots/customer_blocking_no_false_alert.png) |
+| *Real-time pipeline inspection showing 3-frame confirmation counter ("Low seen 2 of 3") and alert banner.* | *Customer reaching into shelf occludes items: 3-photo confirmation prevents false alarm.* |
 
-### How to Switch to ESP32-CAM Later
-When your ESP32-CAM module is powered on and connected to WiFi:
-1. Note its IP address from the Serial Monitor (e.g., `192.168.1.100`).
-2. Open the **Zones & Sources** tab on the web dashboard.
-3. Select **ESP32-CAM Stream**, paste `http://192.168.1.100:81/stream`, and click **Apply Video Source**.
-4. *Alternatively*, update [`backend/.env`](file:///d:/project/smart%20shelf/backend/.env) (or `agent/.env` if using the Camera Agent):
-   ```ini
-   SOURCE_TYPE=stream
-   SOURCE_VALUE=http://192.168.1.100:81/stream
-   ```
-*No code modifications or recompilations are needed.*
+---
+
+## 📷 Unified Camera Abstraction Layer (`backend/camera/`)
+
+ShelfSense includes a pluggable camera abstraction layer ([`backend/camera/`](file:///d:/project/smart%20shelf/backend/camera/)) providing a unified `get_photo()` interface for both virtual demonstrations and physical IoT cameras:
+
+| `CAMERA_MODE` | Description | Typical Use Case | Configuration Keys |
+|---|---|---|---|
+| `simulated` *(Default)* | Replays synthetic/recorded scenario sequences at 5.0s virtual intervals with full time-scaling. | Class demos, automated testing, development without hardware | `CAMERA_SCENARIO=gradual_depletion`<br>`CAMERA_PLAYBACK_SPEED=1.0` |
+| `esp32_pull` | Backend periodically polls the ESP32-CAM web server endpoint over local Wi-Fi. | Standalone shelf camera mounted on retail aisle | `ESP32_CAM_URL=http://192.168.1.100/capture`<br>`CAMERA_POLL_INTERVAL=5.0` |
+| `esp32_push` | ESP32-CAM actively pushes JPEG frames to backend HTTP endpoint via `POST /ingest-photo`. | Power-saving sleep cycles or firewall-restricted networks | `CAMERA_AUTH_TOKEN=secret_key` |
+| `video_file` | Reads looped video files from local disk via OpenCV `VideoCapture`. | Recorded retail shelf CCTV analysis | `VIDEO_FILE_PATH=sample_data/sample_shelf.mp4` |
+
+### Built-in Simulated Scenarios
+When running in `simulated` mode, the system includes 4 pre-configured scenarios located in `backend/demo_scenarios/`:
+1. `gradual_depletion`: Shelf items deplete step-by-step from 100% down to 0% (Empty).
+2. `customer_blocking`: Customer reaches in to inspect an item, temporarily occluding the shelf; demonstrates how the **3-photo confirmation filter** silences transient false alarms.
+3. `restocking`: An empty shelf receives fresh inventory, resetting depletion velocity.
+4. `misplaced_item`: An unexpected product category is detected inside a designated zone.
+
+You can dynamically switch scenarios and camera modes from the dashboard **Zones & Sources** tab, or via REST API:
+```bash
+# Switch to ESP32 pull mode
+curl -X POST http://localhost:5000/camera/mode -H "Content-Type: application/json" -d '{"mode": "esp32_pull", "url": "http://192.168.1.100/capture"}'
+
+# Control simulated playback speed (1.0x to 100.0x)
+curl -X POST http://localhost:5000/camera/simulated/control -H "Content-Type: application/json" -d '{"action": "set_speed", "speed": 2.0}'
+```
+
+### 🛡️ 3-Photo Consecutive Confirmation Filter
+To prevent customer arm reach-ins or momentary shadows from triggering false alarms, alerts are gated behind a 3-photo confirmation filter:
+- When a zone drops below threshold or empties, the state counter increments (`1 of 3`).
+- If normal stock resumes on the next frame, the counter instantly resets with zero alert dispatched.
+- Only when an anomaly persists for **3 consecutive photos** (~15 seconds) is a persistent alert published to the dashboard.
+
+---
+
+## 🧪 Interactive Vision Studio & Demo Mode (`/demo`)
+
+The dashboard features a dedicated **Vision Studio** page (`http://localhost:5173/demo`) designed for examiners and classroom presentations:
+- **24 Real Retail Test Samples**: Curated from the unseen SKU-110K test split in [`backend/demo_samples/`](file:///d:/project/smart%20shelf/backend/demo_samples/).
+- **Side-by-Side Comparison**: Live canvas showing original raw capture side-by-side with YOLOv8 bounding boxes, class labels, and confidence tags.
+- **Dynamic Threshold Slider**: Interactive confidence slider (`0.10` to `0.90`) to observe true precision-recall tradeoffs in real time.
+- **Complete Test Isolation**: Analysis requests are routed through `POST /analyze-image` without polluting live production telemetry or triggering store alerts.
+
+---
+
+## ⚡ Inference Performance & Benchmark
+
+Real-time YOLO inference performance was rigorously benchmarked across 20 unseen test images on the host workstation. See the full report in [`docs/performance.md`](file:///d:/project/smart%20shelf/docs/performance.md).
+
+- **Hardware**: NVIDIA GeForce RTX 4060 Laptop GPU (8GB GDDR6, CUDA 12.6, PyTorch 2.14.1+cu126)
+- **Mean Inference Latency**: **84.68 ms** (~11.8 FPS)
+- **Median Inference Latency**: **83.65 ms**
+- **Min / Max Latency**: **31.92 ms** / **125.65 ms**
+- **VRAM Utilization**: **42.5 MB**
+- **Duty Cycle**: Inference occupies only **1.69%** of the 5.0-second camera capture window, leaving 98.3% GPU headroom for concurrent camera streams.
 
 ---
 

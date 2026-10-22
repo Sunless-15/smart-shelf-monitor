@@ -11,20 +11,18 @@ We are building the "ShelfSense" (Intelligent Empty Shelf, Low Stock, and Mispla
 5. Continue from "Current task". Do not redo work marked DONE unless it is broken.
 
 ### Current task
-Phase 10: trained model in web app + demo mode + ESP32-ready camera layer
-- Working on: Capturing UI screenshots for `docs/screenshots/` and updating README / PROJECT_EXPLAINED.
-- Files worked on:
-  - `scripts/benchmark_latency.py`: Automated 20-image latency test across unseen SKU-110K test split on NVIDIA RTX 4060 Laptop GPU.
-  - `docs/performance.md`: Comprehensive benchmark documentation (Mean: 84.68 ms, Median: 83.65 ms, Min: 31.92 ms, Max: 125.65 ms, FPS: 11.8, VRAM: 42.5 MB).
+Phase 10: trained model in web app + demo mode + ESP32-ready camera layer (COMPLETED)
+- Completed all objectives:
+  - Fixed test suite deadlocks and speed multiplier limits in `CameraManager` and `SimulatedSource`.
+  - Benchmarked YOLO inference latency on host NVIDIA RTX 4060 Laptop GPU (84.68 ms, 42.5 MB VRAM).
+  - Built headless automation via `puppeteer-core` & Microsoft Edge to capture 6 real UI screenshots into `docs/screenshots/`.
+  - Added test discovery safeguards in `pytest.ini` (`testpaths = backend/tests`) and `__test__ = False` in `backend/tools/test_esp32.py`.
+  - Re-ran complete test suite: 46/46 passed in 9.47s (100% pass rate).
+  - Updated `README.md` and `docs/PROJECT_EXPLAINED.md` with screenshot gallery, camera modes, demo studio, and benchmarks.
 
 ## Next steps (in order)
-1. Launch frontend dev server (`cd dashboard && npm run dev`), open at 375px mobile and desktop widths, and capture the 4 required screenshots into `docs/screenshots/`:
-   - Demo page with annotated sample
-   - Dashboard in DEMO MODE with Low alert and shortage prediction
-   - Pipeline trace card showing 3-photo confirmation counter ("Low seen 2 of 3")
-   - Customer blocking scenario showing no false alert
-2. Update `README.md` and `docs/PROJECT_EXPLAINED.md` with `CAMERA_MODE` configuration instructions and demo usage.
-3. Commit completed Phase 10 to Git.
+1. Commit all Phase 10 code, docs, screenshots, and test configurations to Git.
+2. Check `git status` and `git log -5` to confirm clean working tree.
 
 ## Phase checklist
 - [x] Phase 1: Backend skeleton, config, DB layer, video source layer (DONE)
@@ -36,15 +34,16 @@ Phase 10: trained model in web app + demo mode + ESP32-ready camera layer
 - [x] Phase 7: Public deployment (cloud-ready backend, camera agent, auth, Vercel/Render/Atlas configs, DEPLOYMENT.md) (DONE)
 - [x] Phase 8: Bento Grid UI Redesign (Neon-Lime accent, floating sidebar, mixed white/lime/dark cards, half-donut & hatched bar charts, mobile pill bar) (DONE)
 - [x] Phase 9: YOLO training (Stage 1 trained with 91.05% mAP@50 on RTX 4060; Stage 2 waiting for user custom dataset) (DONE)
-- [/] Phase 10: trained model in web app + demo mode + ESP32-ready camera layer (IN PROGRESS)
+- [x] Phase 10: trained model in web app + demo mode + ESP32-ready camera layer (DONE)
   - [x] Part A: Model integration (sku_stage1.pt loading, dynamic model.names, /model-info, threshold config, two-class stock logic) (DONE)
   - [x] Part B: Demo page (24 unseen test samples in backend/demo_samples/, /analyze-image, /demo/*, DemoView.jsx, isolation from live history) (DONE)
   - [x] Part C: Camera layer and scenarios (backend/camera/ with Simulated/Pull/Push/Video, 4 demo scenarios, 3-photo confirmation, DEMO MODE badge) (DONE)
   - [x] Part D: Firmware and switch-over kit (esp32-firmware/shelf_camera/shelf_camera.ino, test_esp32.py, collect_images.py, docs/ESP32_SWITCHOVER.md) (DONE)
-  - [/] Part E: Tests and screenshots (All 9 tests in test_phase10.py passing; 45/46 backend tests passing; 20-image latency benchmark measured in docs/performance.md; screenshots pending) (PARTLY DONE)
-  - [/] Part F: Documentation (docs/ESP32_SWITCHOVER.md & demo READMEs done; docs/performance.md done; PROGRESS.md, PROJECT_EXPLAINED.md, README.md being updated) (PARTLY DONE)
+  - [x] Part E: Tests and screenshots (46/46 tests passing across entire suite; 20-image latency benchmark documented in docs/performance.md; 6 real UI screenshots captured in docs/screenshots/) (DONE)
+  - [x] Part F: Documentation (docs/ESP32_SWITCHOVER.md, docs/performance.md, README.md, docs/PROJECT_EXPLAINED.md, PROGRESS.md all updated) (DONE)
 
 ## Completed work log
+- 2026-10-22 06:58: Completed Phase 10: Captured 6 real UI screenshots into `docs/screenshots/` (Vision Studio `/demo`, Bento grid in DEMO MODE, Pipeline Trace card with 3-photo confirmation, Customer Blocking occlusion handling, and 375px mobile responsive views) using headless Microsoft Edge via `puppeteer-core`. Fixed JSX closure scope in `LiveDashboard.jsx` and `camData` destructuring in `App.jsx`. Configured `pytest.ini` (`testpaths = backend/tests`) and added `__test__ = False` to `backend/tools/test_esp32.py`. Verified 100% pytest pass rate (46 passed, 0 failed in 9.47s) and verified frontend production build compiles cleanly in 615ms. Updated `README.md` with visual showcase, camera abstraction layer, and benchmark data, and updated `docs/PROJECT_EXPLAINED.md` study guide. (Files: README.md, docs/PROJECT_EXPLAINED.md, pytest.ini, backend/tools/test_esp32.py, dashboard/src/App.jsx, dashboard/src/pages/LiveDashboard.jsx, docs/screenshots/*, PROGRESS.md)
 - 2026-10-22 06:31: Executed real YOLO inference latency benchmark on host NVIDIA GeForce RTX 4060 Laptop GPU (8GB VRAM, CUDA 12.6, PyTorch 2.14.1+cu126) across 20 unseen test images from SKU-110K. Measured: Mean latency 84.68 ms (~11.8 FPS), Median 83.65 ms, Min 31.92 ms, Max 125.65 ms, Std Dev 20.59 ms, VRAM allocated 42.5 MB. Verified processing consumes only 1.69% of the 5.0-second ESP32 capture interval. Published full breakdown report in `docs/performance.md`. (Files: scripts/benchmark_latency.py, docs/performance.md, docs/PROJECT_EXPLAINED.md, PROGRESS.md)
 - 2026-10-22 06:26: Fixed Phase 10 test suite issues: Resolved reentrancy deadlock in `CameraManager` by upgrading `_lock` to `threading.RLock()` and adding safe `None` checks in `set_mode` / `control_simulated`; updated `SimulatedSource.set_speed` to permit up to 100x playback speed multiplier, ensuring perfect 5.0s timestamp increments under accelerated test loops. Executed full test suite: 45 passed, 1 skipped in 12.39s (100% pass rate). (Files: backend/camera/manager.py, backend/camera/simulated.py, PROGRESS.md)
 - 2026-10-22 03:00: Checkpoint: Saved current progress on Phase 10. Completed implementation of Part A (YOLO model integration with dynamic class reading, GPU acceleration on RTX 4060, GET /model-info, POST /model-config, two-class zone counting with product and empty_slot), Part B (Demo page with 24 unseen SKU-110K test split images, /analyze-image, side-by-side visualization, latency display, isolated history tagging), Part C (Unified camera abstraction layer in backend/camera/ supporting simulated, esp32_pull, esp32_push, video_file; 4 demo scenarios with virtual clock; 3-photo confirmation filter; live pipeline trace card; top demo badge), Part D (AI-Thinker ESP32-CAM firmware in esp32-firmware/, test_esp32.py, collect_images.py, docs/ESP32_SWITCHOVER.md), and created 9 automated tests in backend/tests/test_phase10.py. Verified .gitignore excludes all heavy datasets and secrets. (Files: backend/app.py, backend/config.py, backend/pipeline.py, backend/inference/detect.py, backend/inference/stock.py, backend/camera/*, backend/demo_samples/*, backend/demo_scenarios/*, esp32-firmware/*, backend/tools/*, dashboard/src/pages/DemoView.jsx, dashboard/src/pages/LiveDashboard.jsx, dashboard/src/pages/ZonesSettingsView.jsx, docs/ESP32_SWITCHOVER.md, .gitignore, PROGRESS.md)
@@ -77,7 +76,7 @@ Phase 10: trained model in web app + demo mode + ESP32-ready camera layer
 4. Remote Git repository URL (e.g. GitHub) if cloud push is desired.
 
 ## Last pytest result
-- Complete test suite: 45 passed, 1 skipped (test_e2e_live) in 12.39s (100% pass rate).
+- Complete test suite: 46 passed in 9.47s (100% pass rate).
 - Phase 10 test suite (`test_phase10.py`): 9/9 passed.
 
 ## How to run and test

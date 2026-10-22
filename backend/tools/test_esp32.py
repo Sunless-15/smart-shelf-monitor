@@ -23,6 +23,9 @@ BACKEND_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(BACKEND_DIR))
 from inference.detect import detector
 
+# Tell pytest not to collect this diagnostic CLI tool as a unit test
+__test__ = False
+
 
 def test_esp32_cam(ip: str, save_snapshot: bool = True):
     print("=" * 60)
