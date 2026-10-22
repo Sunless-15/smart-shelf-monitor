@@ -6,18 +6,6 @@ Built for **Project Phase I, Department of Computer Science & Engineering, St. T
 
 ---
 
-## 👥 Team & Roles
-
-| Name | Reg No | Role |
-|---|---|---|
-| **Shobin Bobby** | STC23CS075 | Team Lead — Architecture, Full-Stack Backend & Pipeline |
-| **Sachu Sreejith** | STC23CS071 | Camera/Hardware Setup, Model Integration & Sources |
-| **Vrinda T Vinod** | STC23CS083 | Dataset Preprocessing, Model Training & Verification |
-| **Aiswarya M S** | MZW23CS002 | Dashboard / UI, GitHub Repository, Project Diary |
-
-**Supervisor:** Prof. Teena M Thomas, Assistant Professor, Dept. of CSE
-
----
 
 ## 🌐 Live Cloud Deployment Guide
 > 📖 **Deploying to the public internet?** Follow the complete, beginner-friendly step-by-step guide in [DEPLOYMENT.md](file:///d:/project/smart%20shelf/DEPLOYMENT.md) to launch the Frontend on **Vercel**, the Backend on **Render (Docker)**, Database on **MongoDB Atlas**, and stream local video via the **Camera Agent** for 100% free!
