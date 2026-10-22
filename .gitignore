@@ -1,55 +1,52 @@
-﻿# Python
+# Large data and training output
+datasets/
+dataset_sku_subset/
+dataset/
+runs/
+weights/
+*.pt
+*.onnx
+*.cache
+*.tar.gz
+
+# Python / Node
+venv/
+.venv/
 __pycache__/
 *.py[cod]
 *$py.class
-*.pytest_cache/
-.coverage
-htmlcov/
-*.log
-
-# Environments & Secrets
-.env
-.env.*
-!.env.example
-agent/.env
-.venv/
-venv/
-ENV/
-runs/
-
-# Dependencies
+.pytest_cache/
 node_modules/
 dist/
 
-# Large binaries & media
-backend/models/*.pt
-!backend/models/.gitkeep
-backend/uploads/*
+# Secrets and local config
+.env
+*.env
+!.env.example
+agent/.env
+config.h
+**/config.h
+!**/config.h.example
+
+# Uploads and outputs
+backend/uploads/
 !backend/uploads/.gitkeep
-backend/outputs/*
+backend/outputs/
 !backend/outputs/.gitkeep
 backend/sample_data/*.jpg
+*.mp4
+!backend/sample_data/sample_shelf.mp4
+*.avi
+*.mov
+*.log
 
-# Datasets and training weights
-datasets/
-dataset_sku_subset/
-*.tar.gz
-*.pt
+# Keep small demo assets explicitly tracked
+!backend/demo_samples/**
+!backend/demo_scenarios/**
+!backend/models/.gitkeep
 
 # System & IDE
 .DS_Store
 Thumbs.db
 .vscode/
 .idea/
-
-esp32-firmware/**/config.h
-
-# Datasets and heavy data
-dataset/
-weights/
-videos/
-*.mp4
-*.avi
-*.mov
-config.h
-**/config.h
