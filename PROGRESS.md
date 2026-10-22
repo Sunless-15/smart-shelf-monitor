@@ -11,18 +11,18 @@ We are building the "ShelfSense" (Intelligent Empty Shelf, Low Stock, and Mispla
 5. Continue from "Current task". Do not redo work marked DONE unless it is broken.
 
 ### Current task
-Phase 10: trained model in web app + demo mode + ESP32-ready camera layer (COMPLETED)
-- Completed all objectives:
-  - Fixed test suite deadlocks and speed multiplier limits in `CameraManager` and `SimulatedSource`.
-  - Benchmarked YOLO inference latency on host NVIDIA RTX 4060 Laptop GPU (84.68 ms, 42.5 MB VRAM).
-  - Built headless automation via `puppeteer-core` & Microsoft Edge to capture 6 real UI screenshots into `docs/screenshots/`.
-  - Added test discovery safeguards in `pytest.ini` (`testpaths = backend/tests`) and `__test__ = False` in `backend/tools/test_esp32.py`.
-  - Re-ran complete test suite: 46/46 passed in 9.47s (100% pass rate).
-  - Updated `README.md` and `docs/PROJECT_EXPLAINED.md` with screenshot gallery, camera modes, demo studio, and benchmarks.
+Phase 11: GitHub cleanup and push (IN PROGRESS)
+- Step 1: Measure repository and filesystem usage, find large folders/files, inspect Git status and commit history.
+- Step 2: Create/update .gitignore, check demo assets size, ask about model weight, create .env.example and config.h.example.
+- Step 3: Fix repository (backup .git if history contains large files, untrack or rewrite history with confirmation).
+- Step 4: Verify before commit (verify tracked files, scan for secrets, run tests).
+- Step 5: Update README with data & model download instructions.
+- Step 6: Commit and push safely after confirming remote and visibility with user.
+- Step 7: Update documentation and AGENT_RULES.md.
 
 ## Next steps (in order)
-1. Commit all Phase 10 code, docs, screenshots, and test configurations to Git.
-2. Check `git status` and `git log -5` to confirm clean working tree.
+1. Execute Step 1: Measure directory sizes and Git history/staging status.
+2. Report findings and execute Step 2 (.gitignore, .env.example, config.h.example).
 
 ## Phase checklist
 - [x] Phase 1: Backend skeleton, config, DB layer, video source layer (DONE)
@@ -35,14 +35,17 @@ Phase 10: trained model in web app + demo mode + ESP32-ready camera layer (COMPL
 - [x] Phase 8: Bento Grid UI Redesign (Neon-Lime accent, floating sidebar, mixed white/lime/dark cards, half-donut & hatched bar charts, mobile pill bar) (DONE)
 - [x] Phase 9: YOLO training (Stage 1 trained with 91.05% mAP@50 on RTX 4060; Stage 2 waiting for user custom dataset) (DONE)
 - [x] Phase 10: trained model in web app + demo mode + ESP32-ready camera layer (DONE)
-  - [x] Part A: Model integration (sku_stage1.pt loading, dynamic model.names, /model-info, threshold config, two-class stock logic) (DONE)
-  - [x] Part B: Demo page (24 unseen test samples in backend/demo_samples/, /analyze-image, /demo/*, DemoView.jsx, isolation from live history) (DONE)
-  - [x] Part C: Camera layer and scenarios (backend/camera/ with Simulated/Pull/Push/Video, 4 demo scenarios, 3-photo confirmation, DEMO MODE badge) (DONE)
-  - [x] Part D: Firmware and switch-over kit (esp32-firmware/shelf_camera/shelf_camera.ino, test_esp32.py, collect_images.py, docs/ESP32_SWITCHOVER.md) (DONE)
-  - [x] Part E: Tests and screenshots (46/46 tests passing across entire suite; 20-image latency benchmark documented in docs/performance.md; 6 real UI screenshots captured in docs/screenshots/) (DONE)
-  - [x] Part F: Documentation (docs/ESP32_SWITCHOVER.md, docs/performance.md, README.md, docs/PROJECT_EXPLAINED.md, PROGRESS.md all updated) (DONE)
+- [ ] Phase 11: GitHub cleanup and push (IN PROGRESS)
+  - [x] Step 1: Measure top-level folders, largest files, git status, git objects & history (DONE)
+  - [x] Step 2: Create or fix .gitignore, check demo assets size, .env.example & config.h.example (DONE)
+  - [x] Step 3: Fix repository (backup .git if needed, untrack or clean history with approval) (DONE - Situation A: 0 large files in history)
+  - [x] Step 4: Verify tracked files, size < 50MB, secret scan, run pytest (DONE - 46/46 passed, 0 secrets)
+  - [x] Step 5: Update README.md with data and model download guide (DONE)
+  - [ ] Step 6: Commit and push (ask remote URL & visibility)
+  - [ ] Step 7: Wrap up documentation & permanent agent rule
 
 ## Completed work log
+- 2026-10-22 08:10: Completed Steps 1-5 of Phase 11: Measured filesystem and repository usage (datasets 24.1 GB, dataset_sku_subset 2.29 GB; total git tracked files on disk: 65.54 MB, Git object storage: 40.48 MiB, max tracked file: 6.25 MB). Confirmed Situation A: zero dataset files, model archives, or files > 100 MB were ever staged or committed in Git history. Hardened root `.gitignore` to strictly exclude datasets/, dataset_sku_subset/, runs/, weights/, *.pt, *.tar.gz, logs, uploads, outputs, and secrets, while preserving small demo fixtures (backend/demo_samples/ 23.43 MB, backend/demo_scenarios/ 31.23 MB) and .gitkeep files. Verified `.env.example` (backend, agent) and `config.h.example` (esp32-firmware) are cleanly tracked with dummy placeholders. Scanned all tracked files for secret patterns: verified 0 real secrets committed in working files or Git history. Re-verified test suite: 46/46 passed in 10.74s (100%). Authored comprehensive "Download data and model" teammate section in `README.md` with instructions, dataset subset script references, and directory structure diagram. Updated `docs/PROJECT_EXPLAINED.md` and `PROGRESS.md`. (Files: .gitignore, README.md, docs/PROJECT_EXPLAINED.md, PROGRESS.md)
 - 2026-10-22 06:58: Completed Phase 10: Captured 6 real UI screenshots into `docs/screenshots/` (Vision Studio `/demo`, Bento grid in DEMO MODE, Pipeline Trace card with 3-photo confirmation, Customer Blocking occlusion handling, and 375px mobile responsive views) using headless Microsoft Edge via `puppeteer-core`. Fixed JSX closure scope in `LiveDashboard.jsx` and `camData` destructuring in `App.jsx`. Configured `pytest.ini` (`testpaths = backend/tests`) and added `__test__ = False` to `backend/tools/test_esp32.py`. Verified 100% pytest pass rate (46 passed, 0 failed in 9.47s) and verified frontend production build compiles cleanly in 615ms. Updated `README.md` with visual showcase, camera abstraction layer, and benchmark data, and updated `docs/PROJECT_EXPLAINED.md` study guide. (Files: README.md, docs/PROJECT_EXPLAINED.md, pytest.ini, backend/tools/test_esp32.py, dashboard/src/App.jsx, dashboard/src/pages/LiveDashboard.jsx, docs/screenshots/*, PROGRESS.md)
 - 2026-10-22 06:31: Executed real YOLO inference latency benchmark on host NVIDIA GeForce RTX 4060 Laptop GPU (8GB VRAM, CUDA 12.6, PyTorch 2.14.1+cu126) across 20 unseen test images from SKU-110K. Measured: Mean latency 84.68 ms (~11.8 FPS), Median 83.65 ms, Min 31.92 ms, Max 125.65 ms, Std Dev 20.59 ms, VRAM allocated 42.5 MB. Verified processing consumes only 1.69% of the 5.0-second ESP32 capture interval. Published full breakdown report in `docs/performance.md`. (Files: scripts/benchmark_latency.py, docs/performance.md, docs/PROJECT_EXPLAINED.md, PROGRESS.md)
 - 2026-10-22 06:26: Fixed Phase 10 test suite issues: Resolved reentrancy deadlock in `CameraManager` by upgrading `_lock` to `threading.RLock()` and adding safe `None` checks in `set_mode` / `control_simulated`; updated `SimulatedSource.set_speed` to permit up to 100x playback speed multiplier, ensuring perfect 5.0s timestamp increments under accelerated test loops. Executed full test suite: 45 passed, 1 skipped in 12.39s (100% pass rate). (Files: backend/camera/manager.py, backend/camera/simulated.py, PROGRESS.md)

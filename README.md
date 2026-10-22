@@ -262,6 +262,61 @@ If you prefer to run the YOLOv8 model directly on your PC's CPU/GPU (for higher 
 
 ---
 
+## 📦 Download Data and Model (For Teammates)
+
+Large training datasets, video archives, and heavy model weights (> 100 MB or multi-GB) are deliberately excluded from this Git repository to keep cloning instant and within GitHub quotas. Follow these instructions to set them up locally:
+
+### 1. SKU-110K Retail Dataset (Stage 1 Training)
+* **Automatic Download**: Ultralytics can download the official 11.4 GB SKU-110K dataset automatically:
+  ```powershell
+  & "d:\project\venv\Scripts\python.exe" -c "from ultralytics import YOLO; YOLO('yolov8s.pt').train(data='SKU-110K.yaml', epochs=1)"
+  ```
+  *(Cancel after download completes, or download manually to `datasets/SKU-110K`)*.
+* **Curating the Balanced Subset**:
+  To generate the clean 1,800-image subset used for Stage 1 training, run our curation script:
+  ```powershell
+  & "d:\project\venv\Scripts\python.exe" scripts/create_sku_subset.py
+  ```
+  This creates `dataset_sku_subset/` with 1,500 training images and 300 validation images without dataset starvation.
+
+### 2. Custom Labeled Shelf Dataset (Stage 2 Fine-Tuning)
+* **Download Link**: `<add Roboflow or Google Drive link here>`
+* **Destination**: Extract the dataset into the `dataset/` folder at project root:
+  - `dataset/images/train/`, `dataset/images/val/`
+  - `dataset/labels/train/`, `dataset/labels/val/`
+  - Ensure labels use class `0: product` and class `1: empty_slot` (see [`dataset/LABELING_GUIDE.md`](file:///d:/project/smart%20shelf/dataset/LABELING_GUIDE.md)).
+
+### 3. Trained Model Weights
+* **Download Link**: `<add GitHub Release or Google Drive link for best.pt / shelf_v1.pt>`
+* **Placement**: Place the downloaded file into `backend/models/`:
+  - E.g. `backend/models/shelf_v1.pt` (or `backend/models/sku_stage1.pt` for Stage 1).
+* **Configuration**: Set the path in `backend/.env`:
+  ```ini
+  MODEL_PATH=models/shelf_v1.pt
+  ```
+
+### 4. Expected Folder Structure After Downloading
+```
+smart-shelf-monitor/
+├── backend/
+│   └── models/
+│       ├── .gitkeep
+│       ├── yolov8n.pt              # Base pre-trained model (included in repo or downloaded)
+│       └── shelf_v1.pt             # Trained weights (downloaded from Releases/Drive)
+├── dataset/                        # Custom labeled shelf dataset
+│   ├── data.yaml
+│   ├── images/ (train/, val/)
+│   └── labels/ (train/, val/)
+├── dataset_sku_subset/             # 1,800-image SKU-110K subset (generated via script)
+│   ├── data.yaml
+│   ├── images/ (train/, val/)
+│   └── labels/ (train/, val/)
+└── datasets/                       # Full raw public SKU-110K dataset (~13 GB)
+    └── SKU-110K/
+```
+
+---
+
 ## 🧠 Custom Trained YOLOv8 Model Deployment
 
 1. **Annotate Shelf Images**:
